@@ -90,7 +90,10 @@ const SalesCalculator: React.FC = () => {
   const calculateResidualValues = (initialPrice: number, duration: number) => {
     const percentages = residualPercentages[duration as keyof typeof residualPercentages];
     const startYear = clientType === 'entreprise' ? 5 : 2;
+    const skipYears = clientType === 'entreprise' ? 3 : 0;
+
     return percentages
+      .slice(skipYears)
       .map((percentage, index) => {
         const year = index + startYear;
         const valueHT = Math.round((initialPrice * percentage / 100) * 100) / 100;
