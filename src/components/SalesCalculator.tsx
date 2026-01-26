@@ -444,9 +444,9 @@ const SalesCalculator: React.FC = () => {
               )}
 
               {/* Options Batteries */}
-              <div className="mt-6 max-w-4xl mx-auto space-y-4">
-                {/* Batterie virtuelle */}
-                <div className="flex items-center justify-center">
+              <div className="mt-6 max-w-4xl mx-auto">
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  {/* Batterie virtuelle */}
                   <label className="flex items-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-4 border-2 border-gray-200 hover:border-green-300">
                     <input
                       type="checkbox"
@@ -459,10 +459,8 @@ const SalesCalculator: React.FC = () => {
                       Batterie virtuelle incluse
                     </span>
                   </label>
-                </div>
 
-                {/* Batterie physique */}
-                <div className="flex items-center justify-center">
+                  {/* Batterie physique */}
                   <label className="flex items-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-4 border-2 border-gray-200 hover:border-green-300">
                     <input
                       type="checkbox"
