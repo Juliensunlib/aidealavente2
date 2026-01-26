@@ -195,6 +195,12 @@ const SalesCalculator: React.FC = () => {
     const batteryPriceValue = parseFloat(batteryPrice);
     const hasBattery = physicalBattery && !isNaN(batteryPowerValue) && !isNaN(batteryPriceValue);
 
+    // Si batterie virtuelle est cochée, les panneaux sont obligatoires
+    if (virtualBattery && !hasPanels) {
+      setError('Veuillez renseigner les panneaux solaires (puissance et prix d\'installation).');
+      return;
+    }
+
     // Au moins un des deux doit être renseigné
     if (!hasPanels && !hasBattery) {
       setError('Veuillez renseigner au moins les panneaux ou la batterie physique.');
@@ -469,7 +475,12 @@ const SalesCalculator: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={virtualBattery}
-                      onChange={(e) => setVirtualBattery(e.target.checked)}
+                      onChange={(e) => {
+                        setVirtualBattery(e.target.checked);
+                        if (e.target.checked) {
+                          setPhysicalBattery(false);
+                        }
+                      }}
                       className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
                     />
                     <Battery className={`w-6 h-6 ml-3 mr-2 ${virtualBattery ? 'text-green-600' : 'text-gray-400'}`} />
@@ -483,7 +494,12 @@ const SalesCalculator: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={physicalBattery}
-                      onChange={(e) => setPhysicalBattery(e.target.checked)}
+                      onChange={(e) => {
+                        setPhysicalBattery(e.target.checked);
+                        if (e.target.checked) {
+                          setVirtualBattery(false);
+                        }
+                      }}
                       className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
                     />
                     <Battery className={`w-6 h-6 ml-3 mr-2 ${physicalBattery ? 'text-green-600' : 'text-gray-400'}`} />
