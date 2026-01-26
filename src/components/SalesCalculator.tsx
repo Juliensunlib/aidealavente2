@@ -188,18 +188,41 @@ const SalesCalculator: React.FC = () => {
     setError('');
     const powerValue = parseFloat(power);
     const priceValue = parseFloat(installationPrice);
+    const hasPanels = !isNaN(powerValue) && !isNaN(priceValue) && powerValue >= 2;
 
-    if (!powerValue || !priceValue || powerValue < 2) {
-      setError('Veuillez saisir une puissance valide (≥ 2 kWc) et un prix d\'installation.');
+    // Validation batterie physique
+    const batteryPowerValue = parseFloat(batteryPower);
+    const batteryPriceValue = parseFloat(batteryPrice);
+    const hasBattery = physicalBattery && !isNaN(batteryPowerValue) && !isNaN(batteryPriceValue);
+
+    // Au moins un des deux doit être renseigné
+    if (!hasPanels && !hasBattery) {
+      setError('Veuillez renseigner au moins les panneaux ou la batterie physique.');
       return;
     }
 
-    // Validation batterie physique
-    if (physicalBattery) {
-      const batteryPowerValue = parseFloat(batteryPower);
-      const batteryPriceValue = parseFloat(batteryPrice);
+    // Validation des panneaux si renseignés
+    if (hasPanels) {
+      if (powerValue < 2) {
+        setError('La puissance doit être supérieure ou égale à 2 kWc.');
+        return;
+      }
 
-      if (!batteryPowerValue || !batteryPriceValue) {
+      // Vérification du plafond de prix SEULEMENT pour les puissances ≤ 36 kWc
+      if (powerValue <= 36) {
+        const index = Math.round((powerValue - 2) / 0.5);
+        const maxPrice = maxPricesHT[Math.min(index, maxPricesHT.length - 1)];
+
+        if (priceValue > maxPrice) {
+          setError(`Prix HT dépasse le plafond autorisé (${maxPrice.toLocaleString()} €). Hors tarif Sunlib.`);
+          return;
+        }
+      }
+    }
+
+    // Validation batterie physique si renseignée
+    if (physicalBattery) {
+      if (!hasBattery) {
         setError('Veuillez remplir tous les champs de la batterie physique.');
         return;
       }
@@ -212,32 +235,28 @@ const SalesCalculator: React.FC = () => {
       }
     }
 
-    // Vérification du plafond de prix SEULEMENT pour les puissances ≤ 36 kWc
-    if (powerValue <= 36) {
-      const index = Math.round((powerValue - 2) / 0.5);
-      const maxPrice = maxPricesHT[Math.min(index, maxPricesHT.length - 1)];
-
-      if (priceValue > maxPrice) {
-        setError(`Prix HT dépasse le plafond autorisé (${maxPrice.toLocaleString()} €). Hors tarif Sunlib.`);
-        return;
-      }
-    }
-    // Pour les puissances > 36 kWc, pas de limitation de prix
-
-    const durations = [10, 15, 20, 25];
+    // Si on n'a que la batterie, on propose seulement 10 et 15 ans
+    const durations = hasPanels ? [10, 15, 20, 25] : [10, 15];
     const calculatedResults: CalculationResult[] = durations.map(duration => {
-      const rate = getVariableRates(duration, powerValue);
-      const monthlyPaymentHT = calculateMonthlyPayment(priceValue, rate, duration * 12);
-      const monthlyPaymentTTC = monthlyPaymentHT * 1.20;
+      let monthlyPaymentHT = 0;
+      let monthlyPaymentTTC = 0;
+      let residualValues: { year: number; value: number; valueTTC: number }[] = [];
+
+      // Calcul panneaux si présents
+      if (hasPanels) {
+        const rate = getVariableRates(duration, powerValue);
+        monthlyPaymentHT = calculateMonthlyPayment(priceValue, rate, duration * 12);
+        monthlyPaymentTTC = monthlyPaymentHT * 1.20;
+        residualValues = calculateResidualValues(priceValue, duration);
+      }
 
       let batteryMonthlyPaymentHT = 0;
       let batteryMonthlyPaymentTTC = 0;
       let batteryResiduals: { year: number; value: number; valueTTC: number }[] = [];
       let totalResiduals: { year: number; value: number; valueTTC: number }[] = [];
 
-      // Calcul batterie physique
-      if (physicalBattery) {
-        const batteryPriceValue = parseFloat(batteryPrice);
+      // Calcul batterie physique si présente
+      if (hasBattery) {
         batteryMonthlyPaymentHT = calculateBatteryMonthlyPayment(batteryPriceValue, batteryDuration);
         batteryMonthlyPaymentTTC = batteryMonthlyPaymentHT * 1.20;
         batteryResiduals = calculateBatteryResidualValues(batteryPriceValue, batteryDuration);
@@ -246,12 +265,11 @@ const SalesCalculator: React.FC = () => {
       const totalMonthlyPaymentHT = monthlyPaymentHT + batteryMonthlyPaymentHT;
       const totalMonthlyPaymentTTC = monthlyPaymentTTC + batteryMonthlyPaymentTTC;
 
-      const minRevenue = calculateMinRevenue(totalMonthlyPaymentTTC, physicalBattery);
+      const minRevenue = calculateMinRevenue(totalMonthlyPaymentTTC, hasBattery);
       const solvability = getSolvability(totalMonthlyPaymentTTC);
-      const residualValues = calculateResidualValues(priceValue, duration);
 
       // Calcul valeurs résiduelles totales
-      if (physicalBattery && batteryResiduals.length > 0) {
+      if (hasPanels && hasBattery && batteryResiduals.length > 0) {
         totalResiduals = calculateTotalResidualValues(residualValues, batteryResiduals);
       }
 
@@ -259,16 +277,16 @@ const SalesCalculator: React.FC = () => {
         duration,
         monthlyPayment: monthlyPaymentHT,
         monthlyPaymentTTC,
-        batteryMonthlyPayment: physicalBattery ? batteryMonthlyPaymentHT : undefined,
-        batteryMonthlyPaymentTTC: physicalBattery ? batteryMonthlyPaymentTTC : undefined,
-        totalMonthlyPayment: physicalBattery ? totalMonthlyPaymentHT : undefined,
-        totalMonthlyPaymentTTC: physicalBattery ? totalMonthlyPaymentTTC : undefined,
+        batteryMonthlyPayment: hasBattery ? batteryMonthlyPaymentHT : undefined,
+        batteryMonthlyPaymentTTC: hasBattery ? batteryMonthlyPaymentTTC : undefined,
+        totalMonthlyPayment: (hasPanels && hasBattery) || (!hasPanels && hasBattery) ? totalMonthlyPaymentHT : undefined,
+        totalMonthlyPaymentTTC: (hasPanels && hasBattery) || (!hasPanels && hasBattery) ? totalMonthlyPaymentTTC : undefined,
         minRevenue,
         solvability,
-        residualValues,
-        batteryResidualValues: physicalBattery ? batteryResiduals : undefined,
-        totalResidualValues: physicalBattery ? totalResiduals : undefined,
-        batteryDuration: physicalBattery ? batteryDuration : undefined
+        residualValues: hasPanels ? residualValues : [],
+        batteryResidualValues: hasBattery ? batteryResiduals : undefined,
+        totalResidualValues: (hasPanels && hasBattery) ? totalResiduals : undefined,
+        batteryDuration: hasBattery ? batteryDuration : undefined
       };
     });
 
@@ -552,9 +570,11 @@ const SalesCalculator: React.FC = () => {
             
             <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6">
               {results.map((result) => {
+                const hasPanels = result.monthlyPayment > 0;
+                const hasBattery = result.batteryMonthlyPayment !== undefined && result.batteryMonthlyPayment > 0;
                 const displayPrice = displayMode === 'HT'
-                  ? (physicalBattery ? result.totalMonthlyPayment : result.monthlyPayment)
-                  : (physicalBattery ? result.totalMonthlyPaymentTTC : result.monthlyPaymentTTC);
+                  ? (result.totalMonthlyPayment || result.monthlyPayment)
+                  : (result.totalMonthlyPaymentTTC || result.monthlyPaymentTTC);
 
                 return (
                   <div
@@ -572,7 +592,7 @@ const SalesCalculator: React.FC = () => {
                         </h4>
 
                         <div className="mb-4">
-                          {physicalBattery && result.batteryMonthlyPayment ? (
+                          {hasPanels && hasBattery ? (
                             <>
                               <div className="text-sm text-gray-600 mb-2">
                                 <p>Panneaux : {(displayMode === 'HT' ? result.monthlyPayment : result.monthlyPaymentTTC).toFixed(2)} €</p>
@@ -589,7 +609,9 @@ const SalesCalculator: React.FC = () => {
                               <p className="text-3xl font-bold text-green-600">
                                 {displayPrice?.toFixed(2)} €
                               </p>
-                              <p className="text-sm text-gray-600">par mois {displayMode}</p>
+                              <p className="text-sm text-gray-600">
+                                {hasBattery ? 'Batterie' : 'Panneaux'} par mois {displayMode}
+                              </p>
                             </>
                           )}
                         </div>
@@ -643,7 +665,7 @@ const SalesCalculator: React.FC = () => {
 
                     {selectedDuration === result.duration && (
                       <div className="border-t border-green-200 bg-green-50 p-4 rounded-b-xl">
-                        {physicalBattery && result.batteryResidualValues ? (
+                        {hasPanels && hasBattery && result.totalResidualValues ? (
                           <div className="space-y-4">
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
                               Valeurs résiduelles {displayMode}
@@ -696,10 +718,27 @@ const SalesCalculator: React.FC = () => {
                               </div>
                             </div>
                           </div>
+                        ) : hasBattery && result.batteryResidualValues ? (
+                          <>
+                            <h5 className="font-semibold text-green-800 mb-3 text-center">
+                              Valeurs résiduelles Batterie {displayMode}
+                            </h5>
+                            <div className="max-h-48 overflow-y-auto space-y-2">
+                              {result.batteryResidualValues.map((residual) => {
+                                const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                return (
+                                  <div key={residual.year} className="flex justify-between items-center text-sm">
+                                    <span className="text-green-700">Année {residual.year}</span>
+                                    <span className="font-medium text-green-800">{displayValue.toLocaleString()} €</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
                         ) : (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles {displayMode}
+                              Valeurs résiduelles Panneaux {displayMode}
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.residualValues.map((residual) => {

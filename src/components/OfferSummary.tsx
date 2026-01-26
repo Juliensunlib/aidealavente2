@@ -63,37 +63,55 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
 
   const handleMail = () => {
     console.log('handleMail called');
+    const hasPanels = offer.monthlyPayment > 0;
+    const hasBattery = offer.batteryMonthlyPayment !== undefined && offer.batteryMonthlyPayment > 0;
     const displayPrice = displayMode === 'HT'
-      ? (physicalBattery ? offer.totalMonthlyPayment : offer.monthlyPayment)
-      : (physicalBattery ? offer.totalMonthlyPaymentTTC : offer.monthlyPaymentTTC);
+      ? (offer.totalMonthlyPayment || offer.monthlyPayment)
+      : (offer.totalMonthlyPaymentTTC || offer.monthlyPaymentTTC);
 
-    const subject = 'Offre SunLib - Abonnement ' + clientType + ' ' + power + 'kWc sur ' + offer.duration + ' ans';
+    let subject = 'Offre SunLib - Abonnement ' + clientType;
+    if (hasPanels) {
+      subject += ' ' + power + 'kWc';
+    }
+    if (hasBattery && batteryPower) {
+      subject += ' + Batterie ' + batteryPower + ' kWh';
+    }
+    subject += ' sur ' + offer.duration + ' ans';
 
     const batteryVirtualLine = virtualBattery ? '- Batterie virtuelle : Incluse\n' : '';
     const batteryPhysicalLine = (physicalBattery && batteryPower)
       ? '- Batterie physique : ' + batteryPower + ' kWh (durée ' + offer.batteryDuration + ' ans)\n'
       : '';
 
-    let financialConditions = 'CONDITIONS FINANCIÈRES\n' +
-      '- Durée panneaux : ' + offer.duration + ' ans\n' +
-      '- Mensualité Panneaux ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2) + ' €\n';
+    let financialConditions = 'CONDITIONS FINANCIÈRES\n';
 
-    if (physicalBattery && offer.batteryMonthlyPayment) {
+    if (hasPanels) {
+      financialConditions += '- Durée panneaux : ' + offer.duration + ' ans\n' +
+        '- Mensualité Panneaux ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2) + ' €\n';
+    }
+
+    if (hasBattery && offer.batteryMonthlyPayment) {
       financialConditions += '- Durée batterie : ' + offer.batteryDuration + ' ans\n' +
-        '- Mensualité Batterie ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.batteryMonthlyPayment : offer.batteryMonthlyPaymentTTC!).toFixed(2) + ' €\n' +
-        '- TOTAL Mensualité ' + displayMode + ' : ' + displayPrice!.toFixed(2) + ' €\n';
+        '- Mensualité Batterie ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.batteryMonthlyPayment : offer.batteryMonthlyPaymentTTC!).toFixed(2) + ' €\n';
+    }
+
+    if (hasPanels && hasBattery) {
+      financialConditions += '- TOTAL Mensualité ' + displayMode + ' : ' + displayPrice!.toFixed(2) + ' €\n';
     }
 
     financialConditions += '- ' + (clientType === 'entreprise'
       ? 'Solvabilité : Validation sous réserve étude SunLib'
-      : 'Revenus minimum requis : ' + offer.minRevenue.toLocaleString() + ' € / an' + (physicalBattery ? ' (7% max)' : '')) + '\n\n';
+      : 'Revenus minimum requis : ' + offer.minRevenue.toLocaleString() + ' € / an' + (hasBattery ? ' (7% max)' : '')) + '\n\n';
+
+    let installationDetails = 'DÉTAILS DE L\'INSTALLATION\n';
+    if (hasPanels) {
+      installationDetails += '- Puissance installée : ' + power + ' kWc\n';
+    }
+    installationDetails += batteryVirtualLine + batteryPhysicalLine + '\n';
 
     const bodyText = 'Bonjour,\n\n' +
       'Veuillez trouver ci-dessous le résumé de votre offre SunLib :\n\n' +
-      'DÉTAILS DE L\'INSTALLATION\n' +
-      '- Puissance installée : ' + power + ' kWc\n' +
-      batteryVirtualLine +
-      batteryPhysicalLine + '\n' +
+      installationDetails +
       financialConditions +
       'AVANTAGES PRINCIPAUX\n' +
       '- Pas d\'apport initial\n' +
@@ -456,12 +474,14 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                       <Zap className="w-5 h-5 text-green-600 mr-2 print:w-3 print:h-3" />
                       Détails de l'installation
                     </h3>
-                    
+
                     <div className="bg-green-50 p-4 rounded-lg print:p-2">
-                      <div className="flex justify-between items-center mb-2 print:mb-1">
-                        <span className="text-gray-700 print:text-xs">Puissance installée</span>
-                        <span className="font-semibold text-green-800 print:text-xs">{power} kWc</span>
-                      </div>
+                      {offer.monthlyPayment > 0 && (
+                        <div className="flex justify-between items-center mb-2 print:mb-1">
+                          <span className="text-gray-700 print:text-xs">Puissance installée</span>
+                          <span className="font-semibold text-green-800 print:text-xs">{power} kWc</span>
+                        </div>
+                      )}
                       <div className="flex justify-between items-center mb-2 print:mb-1">
                         <span className="text-gray-700 print:text-xs">Type de client</span>
                         <span className="font-semibold text-green-800 capitalize print:text-xs">{clientType}</span>
@@ -499,18 +519,22 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                     </h3>
 
                     <div className="bg-green-50 p-4 rounded-lg print:p-2">
-                      <div className="flex justify-between items-center mb-2 print:mb-1">
-                        <span className="text-gray-700 print:text-xs">Durée panneaux</span>
-                        <span className="font-semibold text-green-800 print:text-xs">{offer.duration} ans</span>
-                      </div>
-                      <div className="flex justify-between items-center mb-2 print:mb-1">
-                        <span className="text-gray-700 print:text-xs">Mensualité Panneaux {displayMode}</span>
-                        <span className="font-semibold text-green-800 print:text-xs">
-                          {(displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2)} €
-                        </span>
-                      </div>
+                      {offer.monthlyPayment > 0 && (
+                        <>
+                          <div className="flex justify-between items-center mb-2 print:mb-1">
+                            <span className="text-gray-700 print:text-xs">Durée panneaux</span>
+                            <span className="font-semibold text-green-800 print:text-xs">{offer.duration} ans</span>
+                          </div>
+                          <div className="flex justify-between items-center mb-2 print:mb-1">
+                            <span className="text-gray-700 print:text-xs">Mensualité Panneaux {displayMode}</span>
+                            <span className="font-semibold text-green-800 print:text-xs">
+                              {(displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2)} €
+                            </span>
+                          </div>
+                        </>
+                      )}
 
-                      {physicalBattery && offer.batteryMonthlyPayment && (
+                      {offer.batteryMonthlyPayment && (
                         <>
                           <div className="flex justify-between items-center mb-2 print:mb-1">
                             <span className="text-gray-700 print:text-xs">Durée batterie</span>
@@ -522,15 +546,18 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                               {(displayMode === 'HT' ? offer.batteryMonthlyPayment : offer.batteryMonthlyPaymentTTC!).toFixed(2)} €
                             </span>
                           </div>
-                          <div className="border-t-2 border-green-600 pt-2 mb-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-700 font-bold print:text-xs">TOTAL Mensualité {displayMode}</span>
-                              <span className="font-bold text-green-800 text-lg print:text-xs">
-                                {(displayMode === 'HT' ? offer.totalMonthlyPayment! : offer.totalMonthlyPaymentTTC!).toFixed(2)} €
-                              </span>
-                            </div>
-                          </div>
                         </>
+                      )}
+
+                      {offer.monthlyPayment > 0 && offer.batteryMonthlyPayment && (
+                        <div className="border-t-2 border-green-600 pt-2 mb-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700 font-bold print:text-xs">TOTAL Mensualité {displayMode}</span>
+                            <span className="font-bold text-green-800 text-lg print:text-xs">
+                              {(displayMode === 'HT' ? offer.totalMonthlyPayment! : offer.totalMonthlyPaymentTTC!).toFixed(2)} €
+                            </span>
+                          </div>
+                        </div>
                       )}
 
                       <div className="flex justify-between items-center">
@@ -542,7 +569,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                             ? 'Étude SunLib'
                             : `${offer.minRevenue.toLocaleString()} €/an`
                           }
-                          {physicalBattery && clientType === 'particulier' && (
+                          {offer.batteryMonthlyPayment && clientType === 'particulier' && (
                             <span className="text-xs text-green-600"> (7% max)</span>
                           )}
                         </span>
@@ -605,7 +632,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                     Valeurs résiduelles ({displayMode})
                   </h3>
 
-                  {physicalBattery && offer.batteryResidualValues && offer.totalResidualValues ? (
+                  {offer.monthlyPayment > 0 && offer.batteryMonthlyPayment && offer.batteryResidualValues && offer.totalResidualValues ? (
                     <div className="space-y-4">
                       {/* Tableau Panneaux */}
                       <div>
@@ -699,86 +726,93 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2 print-residual-grid">
-                      {/* Première colonne */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs print-residual-table">
-                          <thead>
-                            <tr>
-                              <th className="bg-green-600 text-white px-2 py-1 text-left text-xs">Année</th>
-                              <th className="bg-green-600 text-white px-2 py-1 text-right text-xs">Valeur</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {offer.residualValues.slice(0, Math.ceil(offer.residualValues.length / 3)).map((residual, index) => {
-                              const val = displayMode === 'HT' ? residual.value : residual.valueTTC;
-                              return (
-                                <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
-                                  <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
-                                    {residual.year}
-                                  </td>
-                                  <td className="px-2 py-1 border-b border-green-200 text-right font-semibold text-green-800 text-xs">
-                                    {val.toLocaleString()}€
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                      {(() => {
+                        const residuals = offer.monthlyPayment > 0 ? offer.residualValues : (offer.batteryResidualValues || []);
+                        return (
+                          <>
+                            {/* Première colonne */}
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs print-residual-table">
+                                <thead>
+                                  <tr>
+                                    <th className="bg-green-600 text-white px-2 py-1 text-left text-xs">Année</th>
+                                    <th className="bg-green-600 text-white px-2 py-1 text-right text-xs">Valeur</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {residuals.slice(0, Math.ceil(residuals.length / 3)).map((residual, index) => {
+                                    const val = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    return (
+                                      <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
+                                        <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
+                                          {residual.year}
+                                        </td>
+                                        <td className="px-2 py-1 border-b border-green-200 text-right font-semibold text-green-800 text-xs">
+                                          {val.toLocaleString()}€
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
 
-                      {/* Deuxième colonne */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs print-residual-table">
-                          <thead>
-                            <tr>
-                              <th className="bg-green-600 text-white px-2 py-1 text-left text-xs">Année</th>
-                              <th className="bg-green-600 text-white px-2 py-1 text-right text-xs">Valeur</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {offer.residualValues.slice(Math.ceil(offer.residualValues.length / 3), Math.ceil(offer.residualValues.length * 2 / 3)).map((residual, index) => {
-                              const val = displayMode === 'HT' ? residual.value : residual.valueTTC;
-                              return (
-                                <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
-                                  <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
-                                    {residual.year}
-                                  </td>
-                                  <td className="px-2 py-1 border-b border-green-200 text-right font-semibold text-green-800 text-xs">
-                                    {val.toLocaleString()}€
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                            {/* Deuxième colonne */}
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs print-residual-table">
+                                <thead>
+                                  <tr>
+                                    <th className="bg-green-600 text-white px-2 py-1 text-left text-xs">Année</th>
+                                    <th className="bg-green-600 text-white px-2 py-1 text-right text-xs">Valeur</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {residuals.slice(Math.ceil(residuals.length / 3), Math.ceil(residuals.length * 2 / 3)).map((residual, index) => {
+                                    const val = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    return (
+                                      <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
+                                        <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
+                                          {residual.year}
+                                        </td>
+                                        <td className="px-2 py-1 border-b border-green-200 text-right font-semibold text-green-800 text-xs">
+                                          {val.toLocaleString()}€
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
 
-                      {/* Troisième colonne */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs print-residual-table">
-                          <thead>
-                            <tr>
-                              <th className="bg-green-600 text-white px-2 py-1 text-left text-xs">Année</th>
-                              <th className="bg-green-600 text-white px-2 py-1 text-right text-xs">Valeur</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {offer.residualValues.slice(Math.ceil(offer.residualValues.length * 2 / 3)).map((residual, index) => {
-                              const val = displayMode === 'HT' ? residual.value : residual.valueTTC;
-                              return (
-                                <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
-                                  <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
-                                    {residual.year}
-                                  </td>
-                                  <td className="px-2 py-1 border-b border-green-200 text-right font-semibold text-green-800 text-xs">
-                                    {val.toLocaleString()}€
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                            {/* Troisième colonne */}
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs print-residual-table">
+                                <thead>
+                                  <tr>
+                                    <th className="bg-green-600 text-white px-2 py-1 text-left text-xs">Année</th>
+                                    <th className="bg-green-600 text-white px-2 py-1 text-right text-xs">Valeur</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {residuals.slice(Math.ceil(residuals.length * 2 / 3)).map((residual, index) => {
+                                    const val = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    return (
+                                      <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
+                                        <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
+                                          {residual.year}
+                                        </td>
+                                        <td className="px-2 py-1 border-b border-green-200 text-right font-semibold text-green-800 text-xs">
+                                          {val.toLocaleString()}€
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
