@@ -6,9 +6,16 @@ interface CalculationResult {
   duration: number;
   monthlyPayment: number;
   monthlyPaymentTTC: number;
+  batteryMonthlyPayment?: number;
+  batteryMonthlyPaymentTTC?: number;
+  totalMonthlyPayment?: number;
+  totalMonthlyPaymentTTC?: number;
   minRevenue: number;
   solvability: 'excellent' | 'good' | 'acceptable' | 'difficult';
   residualValues: { year: number; value: number; valueTTC: number }[];
+  batteryResidualValues?: { year: number; value: number; valueTTC: number }[];
+  totalResidualValues?: { year: number; value: number; valueTTC: number }[];
+  batteryDuration?: number;
 }
 
 const SalesCalculator: React.FC = () => {
@@ -17,6 +24,10 @@ const SalesCalculator: React.FC = () => {
   const [clientType, setClientType] = useState<'particulier' | 'entreprise'>('particulier');
   const [displayMode, setDisplayMode] = useState<'HT' | 'TTC'>('TTC');
   const [virtualBattery, setVirtualBattery] = useState<boolean>(false);
+  const [physicalBattery, setPhysicalBattery] = useState<boolean>(false);
+  const [batteryPower, setBatteryPower] = useState<string>('');
+  const [batteryPrice, setBatteryPrice] = useState<string>('');
+  const [batteryDuration, setBatteryDuration] = useState<10 | 15>(10);
   const [results, setResults] = useState<CalculationResult[]>([]);
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -40,6 +51,12 @@ const SalesCalculator: React.FC = () => {
     20: [106.0, 105.0, 104.0, 103.0, 102.0, 100.0, 96.0, 93.0, 90.0, 86.0, 80.0, 75.0, 66.0, 59.0, 47.4, 37.8, 24.0, 12.9],
     15: [97.5, 95.0, 93.0, 91.0, 89.0, 86.0, 81.0, 75.0, 69.0, 61.0, 51.0, 37.0, 13.8],
     10: [94.0, 91.0, 87.0, 81.0, 71.0, 60.0, 42.0, 15.5]
+  };
+
+  // Pourcentages pour les valeurs résiduelles de la batterie
+  const batteryResidualPercentages = {
+    15: [94.5, 93.1, 91.3, 89.1, 86.3, 82.8, 78.4, 72.8, 65.8, 57.1, 46.0, 32.2, 14.8],
+    10: [94.0, 91.2, 87.2, 81.4, 64.7, 60.4, 42.2, 15.8]
   };
 
   // Taux variables uniquement
@@ -72,11 +89,12 @@ const SalesCalculator: React.FC = () => {
     return Math.round(payment * 100) / 100;
   };
 
-  const calculateMinRevenue = (monthlyPayment: number): number => {
-    // L'abonnement ne doit pas dépasser 4% des revenus annuels
-    // Donc revenus annuels minimum = (mensualité * 12) / 0.04
+  const calculateMinRevenue = (monthlyPayment: number, hasPhysicalBattery: boolean): number => {
+    // Sans batterie physique : 4% des revenus annuels maximum
+    // Avec batterie physique : 7% des revenus annuels maximum
+    const maxPercentage = hasPhysicalBattery ? 0.07 : 0.04;
     const annualPayment = monthlyPayment * 12;
-    const minAnnualRevenue = annualPayment / 0.04;
+    const minAnnualRevenue = annualPayment / maxPercentage;
     return Math.round(minAnnualRevenue);
   };
 
@@ -107,6 +125,65 @@ const SalesCalculator: React.FC = () => {
       .filter(residual => residual.year <= duration);
   };
 
+  const calculateBatteryMonthlyPayment = (batteryPriceValue: number, batteryDurationValue: number) => {
+    // Taux fixes pour la batterie
+    const batteryRates = {
+      15: 0.106,
+      10: 0.115
+    };
+
+    const annualRate = batteryRates[batteryDurationValue as keyof typeof batteryRates];
+    const monthlyRate = annualRate / 12;
+    const months = batteryDurationValue * 12;
+
+    const payment = batteryPriceValue * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months));
+    return Math.round(payment * 100) / 100;
+  };
+
+  const calculateBatteryResidualValues = (batteryPriceValue: number, batteryDurationValue: number) => {
+    const percentages = batteryResidualPercentages[batteryDurationValue as keyof typeof batteryResidualPercentages];
+    const startYear = clientType === 'entreprise' ? 5 : 2;
+    const skipYears = clientType === 'entreprise' ? 3 : 0;
+
+    return percentages
+      .slice(skipYears)
+      .map((percentage, index) => {
+        const year = index + startYear;
+        const valueHT = Math.round((batteryPriceValue * percentage / 100) * 100) / 100;
+        const valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
+        return {
+          year,
+          value: valueHT,
+          valueTTC: valueTTC
+        };
+      })
+      .filter(residual => residual.year <= batteryDurationValue);
+  };
+
+  const calculateTotalResidualValues = (
+    panelResiduals: { year: number; value: number; valueTTC: number }[],
+    batteryResiduals: { year: number; value: number; valueTTC: number }[]
+  ) => {
+    const allYears = new Set([
+      ...panelResiduals.map(r => r.year),
+      ...batteryResiduals.map(r => r.year)
+    ]);
+
+    return Array.from(allYears).sort((a, b) => a - b).map(year => {
+      const panelValue = panelResiduals.find(r => r.year === year);
+      const batteryValue = batteryResiduals.find(r => r.year === year);
+
+      const valueHT = (panelValue?.value || 0) + (batteryValue?.value || 0);
+      const valueTTC = (panelValue?.valueTTC || 0) + (batteryValue?.valueTTC || 0);
+
+      return {
+        year,
+        value: Math.round(valueHT * 100) / 100,
+        valueTTC: Math.round(valueTTC * 100) / 100
+      };
+    });
+  };
+
   const handleCalculate = () => {
     setError('');
     const powerValue = parseFloat(power);
@@ -115,6 +192,24 @@ const SalesCalculator: React.FC = () => {
     if (!powerValue || !priceValue || powerValue < 2) {
       setError('Veuillez saisir une puissance valide (≥ 2 kWc) et un prix d\'installation.');
       return;
+    }
+
+    // Validation batterie physique
+    if (physicalBattery) {
+      const batteryPowerValue = parseFloat(batteryPower);
+      const batteryPriceValue = parseFloat(batteryPrice);
+
+      if (!batteryPowerValue || !batteryPriceValue) {
+        setError('Veuillez remplir tous les champs de la batterie physique.');
+        return;
+      }
+
+      // Vérification du tarif batterie (prix par kWh ne doit pas dépasser 500 €)
+      const pricePerKwh = batteryPriceValue / batteryPowerValue;
+      if (pricePerKwh > 500) {
+        setError(`Prix batterie hors tarif SunLib (${pricePerKwh.toFixed(2)} €/kWh > 500 €/kWh).`);
+        return;
+      }
     }
 
     // Vérification du plafond de prix SEULEMENT pour les puissances ≤ 36 kWc
@@ -133,25 +228,54 @@ const SalesCalculator: React.FC = () => {
     const calculatedResults: CalculationResult[] = durations.map(duration => {
       const rate = getVariableRates(duration, powerValue);
       const monthlyPaymentHT = calculateMonthlyPayment(priceValue, rate, duration * 12);
-      const monthlyPaymentTTC = monthlyPaymentHT * 1.20; // TVA 20%
-      const minRevenue = calculateMinRevenue(monthlyPaymentTTC);
-      const solvability = getSolvability(monthlyPaymentTTC);
+      const monthlyPaymentTTC = monthlyPaymentHT * 1.20;
+
+      let batteryMonthlyPaymentHT = 0;
+      let batteryMonthlyPaymentTTC = 0;
+      let batteryResiduals: { year: number; value: number; valueTTC: number }[] = [];
+      let totalResiduals: { year: number; value: number; valueTTC: number }[] = [];
+
+      // Calcul batterie physique
+      if (physicalBattery) {
+        const batteryPriceValue = parseFloat(batteryPrice);
+        batteryMonthlyPaymentHT = calculateBatteryMonthlyPayment(batteryPriceValue, batteryDuration);
+        batteryMonthlyPaymentTTC = batteryMonthlyPaymentHT * 1.20;
+        batteryResiduals = calculateBatteryResidualValues(batteryPriceValue, batteryDuration);
+      }
+
+      const totalMonthlyPaymentHT = monthlyPaymentHT + batteryMonthlyPaymentHT;
+      const totalMonthlyPaymentTTC = monthlyPaymentTTC + batteryMonthlyPaymentTTC;
+
+      const minRevenue = calculateMinRevenue(totalMonthlyPaymentTTC, physicalBattery);
+      const solvability = getSolvability(totalMonthlyPaymentTTC);
       const residualValues = calculateResidualValues(priceValue, duration);
+
+      // Calcul valeurs résiduelles totales
+      if (physicalBattery && batteryResiduals.length > 0) {
+        totalResiduals = calculateTotalResidualValues(residualValues, batteryResiduals);
+      }
 
       return {
         duration,
         monthlyPayment: monthlyPaymentHT,
         monthlyPaymentTTC,
+        batteryMonthlyPayment: physicalBattery ? batteryMonthlyPaymentHT : undefined,
+        batteryMonthlyPaymentTTC: physicalBattery ? batteryMonthlyPaymentTTC : undefined,
+        totalMonthlyPayment: physicalBattery ? totalMonthlyPaymentHT : undefined,
+        totalMonthlyPaymentTTC: physicalBattery ? totalMonthlyPaymentTTC : undefined,
         minRevenue,
         solvability,
-        residualValues
+        residualValues,
+        batteryResidualValues: physicalBattery ? batteryResiduals : undefined,
+        totalResidualValues: physicalBattery ? totalResiduals : undefined,
+        batteryDuration: physicalBattery ? batteryDuration : undefined
       };
     });
 
     setResults(calculatedResults);
     setShowResults(true);
     setSelectedDuration(null);
-    setIsFormCollapsed(true); // Réduire automatiquement après calcul
+    setIsFormCollapsed(true);
   };
 
   const handleOfferSelection = (result: CalculationResult) => {
@@ -171,6 +295,8 @@ const SalesCalculator: React.FC = () => {
         clientType={clientType}
         displayMode={displayMode}
         virtualBattery={virtualBattery}
+        physicalBattery={physicalBattery}
+        batteryPower={physicalBattery ? parseFloat(batteryPower) : undefined}
         onBack={() => setShowOfferSummary(false)}
       />
     );
@@ -308,8 +434,18 @@ const SalesCalculator: React.FC = () => {
                 </div>
               </div>
 
-              {/* Option Batterie virtuelle */}
-              <div className="mt-6 max-w-4xl mx-auto">
+              {/* Message pour puissance > 36 kWc */}
+              {parseFloat(power) > 36 && (
+                <div className="mt-6 max-w-4xl mx-auto">
+                  <div className="p-4 bg-blue-100 border border-blue-400 text-blue-800 rounded-lg text-center">
+                    <p className="font-medium">Le prix de l'installation sera validé par SunLib</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Options Batteries */}
+              <div className="mt-6 max-w-4xl mx-auto space-y-4">
+                {/* Batterie virtuelle */}
                 <div className="flex items-center justify-center">
                   <label className="flex items-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-4 border-2 border-gray-200 hover:border-green-300">
                     <input
@@ -324,9 +460,71 @@ const SalesCalculator: React.FC = () => {
                     </span>
                   </label>
                 </div>
-                {virtualBattery && (
-                  <div className="mt-2 text-center text-sm text-green-700 bg-green-50 p-3 rounded-lg">
-                    <p>🔋 Option batterie virtuelle sélectionnée - cette information apparaîtra dans le résumé d'offre</p>
+
+                {/* Batterie physique */}
+                <div className="flex items-center justify-center">
+                  <label className="flex items-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-4 border-2 border-gray-200 hover:border-green-300">
+                    <input
+                      type="checkbox"
+                      checked={physicalBattery}
+                      onChange={(e) => setPhysicalBattery(e.target.checked)}
+                      className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                    />
+                    <Battery className={`w-6 h-6 ml-3 mr-2 ${physicalBattery ? 'text-green-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${physicalBattery ? 'text-green-800' : 'text-gray-600'}`}>
+                      Batterie physique
+                    </span>
+                  </label>
+                </div>
+
+                {/* Champs conditionnels batterie physique */}
+                {physicalBattery && (
+                  <div className="mt-4 p-6 bg-green-50 border-2 border-green-300 rounded-lg">
+                    <h4 className="text-lg font-semibold text-green-800 mb-4">Configuration batterie physique</h4>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Puissance (kWh)
+                        </label>
+                        <input
+                          type="number"
+                          value={batteryPower}
+                          onChange={(e) => setBatteryPower(e.target.value)}
+                          min="0"
+                          step="0.1"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                          placeholder="Ex: 10"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Prix HT (€)
+                        </label>
+                        <input
+                          type="number"
+                          value={batteryPrice}
+                          onChange={(e) => setBatteryPrice(e.target.value)}
+                          min="0"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                          placeholder="Ex: 8000"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Durée d'abonnement
+                        </label>
+                        <select
+                          value={batteryDuration}
+                          onChange={(e) => setBatteryDuration(parseInt(e.target.value) as 10 | 15)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                        >
+                          <option value={10}>10 ans</option>
+                          <option value={15}>15 ans</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -356,14 +554,16 @@ const SalesCalculator: React.FC = () => {
             
             <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6">
               {results.map((result) => {
-                const displayPrice = displayMode === 'HT' ? result.monthlyPayment : result.monthlyPaymentTTC;
-                
+                const displayPrice = displayMode === 'HT'
+                  ? (physicalBattery ? result.totalMonthlyPayment : result.monthlyPayment)
+                  : (physicalBattery ? result.totalMonthlyPaymentTTC : result.monthlyPaymentTTC);
+
                 return (
                   <div
                     key={result.duration}
                     className={`bg-white rounded-xl shadow-lg transition-all ${
-                      selectedDuration === result.duration 
-                        ? 'ring-4 ring-green-500 bg-green-50' 
+                      selectedDuration === result.duration
+                        ? 'ring-4 ring-green-500 bg-green-50'
                         : 'hover:shadow-xl hover:scale-105'
                     }`}
                   >
@@ -372,12 +572,28 @@ const SalesCalculator: React.FC = () => {
                         <h4 className="text-xl font-bold text-gray-800 mb-3">
                           {result.duration} ans
                         </h4>
-                        
+
                         <div className="mb-4">
-                          <p className="text-3xl font-bold text-green-600">
-                            {displayPrice.toFixed(2)} €
-                          </p>
-                          <p className="text-sm text-gray-600">par mois {displayMode}</p>
+                          {physicalBattery && result.batteryMonthlyPayment ? (
+                            <>
+                              <div className="text-sm text-gray-600 mb-2">
+                                <p>Panneaux : {(displayMode === 'HT' ? result.monthlyPayment : result.monthlyPaymentTTC).toFixed(2)} €</p>
+                                <p>Batterie : {(displayMode === 'HT' ? result.batteryMonthlyPayment : result.batteryMonthlyPaymentTTC!).toFixed(2)} €</p>
+                                <hr className="my-2 border-green-300" />
+                              </div>
+                              <p className="text-3xl font-bold text-green-600">
+                                {displayPrice?.toFixed(2)} €
+                              </p>
+                              <p className="text-sm text-gray-600 font-semibold">TOTAL par mois {displayMode}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-green-600">
+                                {displayPrice?.toFixed(2)} €
+                              </p>
+                              <p className="text-sm text-gray-600">par mois {displayMode}</p>
+                            </>
+                          )}
                         </div>
 
                         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
@@ -389,6 +605,11 @@ const SalesCalculator: React.FC = () => {
                               <p className="text-lg font-bold text-blue-600">
                                 {result.minRevenue.toLocaleString()} € / an
                               </p>
+                              {physicalBattery && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  (avec batterie : 7% max)
+                                </p>
+                              )}
                             </>
                           ) : (
                             <>
@@ -424,20 +645,77 @@ const SalesCalculator: React.FC = () => {
 
                     {selectedDuration === result.duration && (
                       <div className="border-t border-green-200 bg-green-50 p-4 rounded-b-xl">
-                        <h5 className="font-semibold text-green-800 mb-3 text-center">
-                          Valeurs résiduelles {displayMode}
-                        </h5>
-                        <div className="max-h-48 overflow-y-auto space-y-2">
-                          {result.residualValues.map((residual) => {
-                            const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
-                            return (
-                              <div key={residual.year} className="flex justify-between items-center text-sm">
-                                <span className="text-green-700">Année {residual.year}</span>
-                                <span className="font-medium text-green-800">{displayValue.toLocaleString()} €</span>
+                        {physicalBattery && result.batteryResidualValues ? (
+                          <div className="space-y-4">
+                            <h5 className="font-semibold text-green-800 mb-3 text-center">
+                              Valeurs résiduelles {displayMode}
+                            </h5>
+
+                            <div className="grid md:grid-cols-3 gap-3 text-xs">
+                              <div className="bg-white p-3 rounded-lg">
+                                <p className="font-semibold text-blue-700 mb-2 text-center">Panneaux</p>
+                                <div className="space-y-1 max-h-32 overflow-y-auto">
+                                  {result.residualValues.map((residual) => {
+                                    const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    return (
+                                      <div key={residual.year} className="flex justify-between">
+                                        <span className="text-gray-600">An {residual.year}</span>
+                                        <span className="font-medium text-blue-700">{displayValue.toLocaleString()}€</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            );
-                          })}
-                        </div>
+
+                              <div className="bg-white p-3 rounded-lg">
+                                <p className="font-semibold text-orange-700 mb-2 text-center">Batterie</p>
+                                <div className="space-y-1 max-h-32 overflow-y-auto">
+                                  {result.batteryResidualValues!.map((residual) => {
+                                    const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    return (
+                                      <div key={residual.year} className="flex justify-between">
+                                        <span className="text-gray-600">An {residual.year}</span>
+                                        <span className="font-medium text-orange-700">{displayValue.toLocaleString()}€</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <div className="bg-white p-3 rounded-lg border-2 border-green-500">
+                                <p className="font-semibold text-green-800 mb-2 text-center">TOTAL</p>
+                                <div className="space-y-1 max-h-32 overflow-y-auto">
+                                  {result.totalResidualValues!.map((residual) => {
+                                    const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    return (
+                                      <div key={residual.year} className="flex justify-between">
+                                        <span className="text-gray-600">An {residual.year}</span>
+                                        <span className="font-bold text-green-800">{displayValue.toLocaleString()}€</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <h5 className="font-semibold text-green-800 mb-3 text-center">
+                              Valeurs résiduelles {displayMode}
+                            </h5>
+                            <div className="max-h-48 overflow-y-auto space-y-2">
+                              {result.residualValues.map((residual) => {
+                                const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                return (
+                                  <div key={residual.year} className="flex justify-between items-center text-sm">
+                                    <span className="text-green-700">Année {residual.year}</span>
+                                    <span className="font-medium text-green-800">{displayValue.toLocaleString()} €</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
