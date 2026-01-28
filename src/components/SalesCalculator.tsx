@@ -684,7 +684,7 @@ const SalesCalculator: React.FC = () => {
                         {hasPanels && hasBattery && result.totalResidualValues ? (
                           <div className="space-y-4">
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles {displayMode}
+                              Valeurs résiduelles (HT)
                             </h5>
 
                             <div className="grid md:grid-cols-3 gap-3 text-xs">
@@ -692,7 +692,7 @@ const SalesCalculator: React.FC = () => {
                                 <p className="font-semibold text-blue-700 mb-2 text-center">Panneaux</p>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                   {result.residualValues.map((residual) => {
-                                    const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    const displayValue = residual.value;
                                     return (
                                       <div key={residual.year} className="flex justify-between">
                                         <span className="text-gray-600">An {residual.year}</span>
@@ -707,7 +707,7 @@ const SalesCalculator: React.FC = () => {
                                 <p className="font-semibold text-orange-700 mb-2 text-center">Batterie</p>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                   {result.batteryResidualValues!.map((residual) => {
-                                    const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    const displayValue = residual.value;
                                     return (
                                       <div key={residual.year} className="flex justify-between">
                                         <span className="text-gray-600">An {residual.year}</span>
@@ -722,7 +722,7 @@ const SalesCalculator: React.FC = () => {
                                 <p className="font-semibold text-green-800 mb-2 text-center">TOTAL</p>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                   {result.totalResidualValues!.map((residual) => {
-                                    const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                    const displayValue = residual.value;
                                     return (
                                       <div key={residual.year} className="flex justify-between">
                                         <span className="text-gray-600">An {residual.year}</span>
@@ -737,11 +737,11 @@ const SalesCalculator: React.FC = () => {
                         ) : hasBattery && result.batteryResidualValues ? (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles Batterie {displayMode}
+                              Valeurs résiduelles Batterie (HT)
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.batteryResidualValues.map((residual) => {
-                                const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                const displayValue = residual.value;
                                 return (
                                   <div key={residual.year} className="flex justify-between items-center text-sm">
                                     <span className="text-green-700">Année {residual.year}</span>
@@ -754,11 +754,11 @@ const SalesCalculator: React.FC = () => {
                         ) : (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles Panneaux {displayMode}
+                              Valeurs résiduelles Panneaux (HT)
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.residualValues.map((residual) => {
-                                const displayValue = displayMode === 'HT' ? residual.value : residual.valueTTC;
+                                const displayValue = residual.value;
                                 return (
                                   <div key={residual.year} className="flex justify-between items-center text-sm">
                                     <span className="text-green-700">Année {residual.year}</span>
