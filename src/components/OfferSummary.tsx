@@ -629,7 +629,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                 <div className="mt-6 bg-gray-50 p-4 rounded-lg print-residual-section">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3 text-center flex items-center justify-center print-residual-title">
                     <TrendingUp className="w-4 h-4 mr-2 print:w-3 print:h-3" />
-                    Valeurs résiduelles (HT)
+                    Valeurs résiduelles ({clientType === 'particulier' ? 'TTC' : 'HT'})
                   </h3>
 
                   {offer.monthlyPayment > 0 && offer.batteryMonthlyPayment && offer.batteryResidualValues && offer.totalResidualValues ? (
@@ -651,7 +651,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                               <tr className="bg-white">
                                 <td className="px-2 py-1 font-semibold text-gray-700">Valeur</td>
                                 {offer.residualValues.map(r => {
-                                  const val = r.value;
+                                  const val = clientType === 'particulier' ? r.valueTTC : r.value;
                                   return (
                                     <td key={r.year} className="px-2 py-1 text-center font-medium text-blue-700">
                                       {val.toLocaleString()}€
@@ -681,7 +681,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                               <tr className="bg-white">
                                 <td className="px-2 py-1 font-semibold text-gray-700">Valeur</td>
                                 {offer.batteryResidualValues.map(r => {
-                                  const val = r.value;
+                                  const val = clientType === 'particulier' ? r.valueTTC : r.value;
                                   return (
                                     <td key={r.year} className="px-2 py-1 text-center font-medium text-orange-700">
                                       {val.toLocaleString()}€
@@ -711,7 +711,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                               <tr className="bg-white">
                                 <td className="px-2 py-1 font-bold text-gray-700">Valeur</td>
                                 {offer.totalResidualValues.map(r => {
-                                  const val = r.value;
+                                  const val = clientType === 'particulier' ? r.valueTTC : r.value;
                                   return (
                                     <td key={r.year} className="px-2 py-1 text-center font-bold text-green-800">
                                       {val.toLocaleString()}€
@@ -741,7 +741,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                                 </thead>
                                 <tbody>
                                   {residuals.slice(0, Math.ceil(residuals.length / 3)).map((residual, index) => {
-                                    const val = residual.value;
+                                    const val = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                     return (
                                       <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
                                         <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
@@ -768,7 +768,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                                 </thead>
                                 <tbody>
                                   {residuals.slice(Math.ceil(residuals.length / 3), Math.ceil(residuals.length * 2 / 3)).map((residual, index) => {
-                                    const val = residual.value;
+                                    const val = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                     return (
                                       <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
                                         <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">
@@ -795,7 +795,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                                 </thead>
                                 <tbody>
                                   {residuals.slice(Math.ceil(residuals.length * 2 / 3)).map((residual, index) => {
-                                    const val = residual.value;
+                                    const val = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                     return (
                                       <tr key={residual.year} className={index % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
                                         <td className="px-2 py-1 border-b border-green-200 text-gray-700 text-xs">

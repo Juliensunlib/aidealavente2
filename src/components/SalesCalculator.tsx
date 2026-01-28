@@ -110,12 +110,26 @@ const SalesCalculator: React.FC = () => {
     const startYear = clientType === 'entreprise' ? 5 : 2;
     const skipYears = clientType === 'entreprise' ? 3 : 0;
 
+    // Pour les particuliers, calculer les valeurs résiduelles sur le prix TTC
+    const basePrice = clientType === 'particulier' ? initialPrice * 1.20 : initialPrice;
+
     return percentages
       .slice(skipYears)
       .map((percentage, index) => {
         const year = index + startYear;
-        const valueHT = Math.round((initialPrice * percentage / 100) * 100) / 100;
-        const valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
+        let valueHT: number;
+        let valueTTC: number;
+
+        if (clientType === 'particulier') {
+          // Pour les particuliers: appliquer le pourcentage sur le prix TTC
+          valueTTC = Math.round((basePrice * percentage / 100) * 100) / 100;
+          valueHT = Math.round((valueTTC / 1.20) * 100) / 100;
+        } else {
+          // Pour les entreprises: appliquer le pourcentage sur le prix HT
+          valueHT = Math.round((initialPrice * percentage / 100) * 100) / 100;
+          valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
+        }
+
         return {
           year,
           value: valueHT,
@@ -145,12 +159,26 @@ const SalesCalculator: React.FC = () => {
     const startYear = clientType === 'entreprise' ? 5 : 2;
     const skipYears = clientType === 'entreprise' ? 3 : 0;
 
+    // Pour les particuliers, calculer les valeurs résiduelles sur le prix TTC
+    const basePrice = clientType === 'particulier' ? batteryPriceValue * 1.20 : batteryPriceValue;
+
     return percentages
       .slice(skipYears)
       .map((percentage, index) => {
         const year = index + startYear;
-        const valueHT = Math.round((batteryPriceValue * percentage / 100) * 100) / 100;
-        const valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
+        let valueHT: number;
+        let valueTTC: number;
+
+        if (clientType === 'particulier') {
+          // Pour les particuliers: appliquer le pourcentage sur le prix TTC
+          valueTTC = Math.round((basePrice * percentage / 100) * 100) / 100;
+          valueHT = Math.round((valueTTC / 1.20) * 100) / 100;
+        } else {
+          // Pour les entreprises: appliquer le pourcentage sur le prix HT
+          valueHT = Math.round((batteryPriceValue * percentage / 100) * 100) / 100;
+          valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
+        }
+
         return {
           year,
           value: valueHT,
@@ -684,7 +712,7 @@ const SalesCalculator: React.FC = () => {
                         {hasPanels && hasBattery && result.totalResidualValues ? (
                           <div className="space-y-4">
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles (HT)
+                              Valeurs résiduelles ({clientType === 'particulier' ? 'TTC' : 'HT'})
                             </h5>
 
                             <div className="grid md:grid-cols-3 gap-3 text-xs">
@@ -692,7 +720,7 @@ const SalesCalculator: React.FC = () => {
                                 <p className="font-semibold text-blue-700 mb-2 text-center">Panneaux</p>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                   {result.residualValues.map((residual) => {
-                                    const displayValue = residual.value;
+                                    const displayValue = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                     return (
                                       <div key={residual.year} className="flex justify-between">
                                         <span className="text-gray-600">An {residual.year}</span>
@@ -707,7 +735,7 @@ const SalesCalculator: React.FC = () => {
                                 <p className="font-semibold text-orange-700 mb-2 text-center">Batterie</p>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                   {result.batteryResidualValues!.map((residual) => {
-                                    const displayValue = residual.value;
+                                    const displayValue = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                     return (
                                       <div key={residual.year} className="flex justify-between">
                                         <span className="text-gray-600">An {residual.year}</span>
@@ -722,7 +750,7 @@ const SalesCalculator: React.FC = () => {
                                 <p className="font-semibold text-green-800 mb-2 text-center">TOTAL</p>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                   {result.totalResidualValues!.map((residual) => {
-                                    const displayValue = residual.value;
+                                    const displayValue = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                     return (
                                       <div key={residual.year} className="flex justify-between">
                                         <span className="text-gray-600">An {residual.year}</span>
@@ -737,11 +765,11 @@ const SalesCalculator: React.FC = () => {
                         ) : hasBattery && result.batteryResidualValues ? (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles Batterie (HT)
+                              Valeurs résiduelles Batterie ({clientType === 'particulier' ? 'TTC' : 'HT'})
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.batteryResidualValues.map((residual) => {
-                                const displayValue = residual.value;
+                                const displayValue = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                 return (
                                   <div key={residual.year} className="flex justify-between items-center text-sm">
                                     <span className="text-green-700">Année {residual.year}</span>
@@ -754,11 +782,11 @@ const SalesCalculator: React.FC = () => {
                         ) : (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles Panneaux (HT)
+                              Valeurs résiduelles Panneaux ({clientType === 'particulier' ? 'TTC' : 'HT'})
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.residualValues.map((residual) => {
-                                const displayValue = residual.value;
+                                const displayValue = clientType === 'particulier' ? residual.valueTTC : residual.value;
                                 return (
                                   <div key={residual.year} className="flex justify-between items-center text-sm">
                                     <span className="text-green-700">Année {residual.year}</span>
