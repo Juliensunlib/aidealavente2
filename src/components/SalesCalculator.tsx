@@ -21,7 +21,7 @@ interface CalculationResult {
 const SalesCalculator: React.FC = () => {
   const [power, setPower] = useState<string>('');
   const [installationPrice, setInstallationPrice] = useState<string>('');
-  // const [initialPayment, setInitialPayment] = useState<string>(''); // DÉSACTIVÉ - Pour réactiver plus tard
+  const [initialPayment, setInitialPayment] = useState<string>('');
   const [clientType, setClientType] = useState<'particulier' | 'entreprise'>('particulier');
   const [displayMode, setDisplayMode] = useState<'HT' | 'TTC'>('TTC');
   const [virtualBattery, setVirtualBattery] = useState<boolean>(false);
@@ -270,16 +270,16 @@ const SalesCalculator: React.FC = () => {
       }
     }
 
-    // DÉSACTIVÉ - Calcul du capital à financer avec versement initial
-    // const initialPaymentValue = parseFloat(initialPayment) || 0;
+    // Calcul du capital à financer avec versement initial
+    const initialPaymentValue = parseFloat(initialPayment) || 0;
     // Si entreprise en HT : versement initial est déjà en HT
     // Si particulier en TTC : versement initial est en TTC, on le convertit en HT
-    // const initialPaymentHT = initialPaymentValue > 0
-    //   ? (clientType === 'entreprise' && displayMode === 'HT'
-    //       ? initialPaymentValue
-    //       : initialPaymentValue / 1.20)
-    //   : 0;
-    // const capitalToFinance = hasPanels && initialPaymentHT > 0 ? priceValue - initialPaymentHT : priceValue;
+    const initialPaymentHT = initialPaymentValue > 0
+      ? (clientType === 'entreprise' && displayMode === 'HT'
+          ? initialPaymentValue
+          : initialPaymentValue / 1.20)
+      : 0;
+    const capitalToFinance = hasPanels && initialPaymentHT > 0 ? priceValue - initialPaymentHT : priceValue;
 
     // Si on n'a que la batterie, on propose seulement 10 et 15 ans
     const durations = hasPanels ? [10, 15, 20, 25] : [10, 15];
@@ -291,7 +291,7 @@ const SalesCalculator: React.FC = () => {
       // Calcul panneaux si présents
       if (hasPanels) {
         const rate = getVariableRates(duration, powerValue);
-        monthlyPaymentHT = calculateMonthlyPayment(priceValue, rate, duration * 12);
+        monthlyPaymentHT = calculateMonthlyPayment(capitalToFinance, rate, duration * 12);
         monthlyPaymentTTC = monthlyPaymentHT * 1.20;
         residualValues = calculateResidualValues(priceValue, duration);
       }
@@ -357,7 +357,7 @@ const SalesCalculator: React.FC = () => {
         offer={selectedOffer}
         power={parseFloat(power)}
         installationPrice={parseFloat(installationPrice)}
-        initialPayment={0} // DÉSACTIVÉ - Versement initial
+        initialPayment={parseFloat(initialPayment) || 0}
         clientType={clientType}
         displayMode={displayMode}
         virtualBattery={virtualBattery}
@@ -437,7 +437,6 @@ const SalesCalculator: React.FC = () => {
                   />
                 </div>
 
-                {/* DÉSACTIVÉ - Champ versement initial
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Versement initial {displayMode} (€)
@@ -451,7 +450,6 @@ const SalesCalculator: React.FC = () => {
                   />
                   <p className="text-xs text-gray-500 mt-1">Optionnel - Réduit les mensualités</p>
                 </div>
-                */}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -525,7 +523,7 @@ const SalesCalculator: React.FC = () => {
                 </div>
               )}
 
-              {/* DÉSACTIVÉ - Affichage du capital financé si versement initial
+              {/* Affichage du capital financé si versement initial */}
               {parseFloat(initialPayment) > 0 && parseFloat(installationPrice) > 0 && (
                 <div className="mt-6 max-w-6xl mx-auto">
                   <div className="p-4 bg-green-100 border-2 border-green-400 rounded-lg">
@@ -565,7 +563,6 @@ const SalesCalculator: React.FC = () => {
                   </div>
                 </div>
               )}
-              */}
 
               {/* Options Batteries */}
               <div className="mt-6 max-w-4xl mx-auto">

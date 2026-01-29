@@ -87,8 +87,6 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
 
     let financialConditions = 'CONDITIONS FINANCIÈRES\n';
 
-    // DÉSACTIVÉ - Versement initial
-    /*
     if (initialPayment > 0 && hasPanels) {
       const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
         ? initialPayment
@@ -103,7 +101,6 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
 
       financialConditions += '- Capital financé HT : ' + (installationPrice - initialPmtHT).toFixed(2) + ' €\n\n';
     }
-    */
 
     if (hasPanels) {
       financialConditions += '- Durée panneaux : ' + offer.duration + ' ans\n' +
@@ -539,7 +536,6 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                     </h3>
 
                     <div className="bg-green-50 p-4 rounded-lg print:p-2">
-                      {/* DÉSACTIVÉ - Versement initial
                       {initialPayment > 0 && offer.monthlyPayment > 0 && (
                         <>
                           <div className="mb-3 pb-3 border-b-2 border-green-300">
@@ -571,7 +567,6 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                           </div>
                         </>
                       )}
-                      */}
                       {offer.monthlyPayment > 0 && (
                         <>
                           <div className="flex justify-between items-center mb-2 print:mb-1">
