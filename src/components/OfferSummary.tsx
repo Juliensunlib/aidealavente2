@@ -99,7 +99,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
         financialConditions += '- Versement initial HT : ' + initialPmtHT.toFixed(2) + ' €\n';
       }
 
-      financialConditions += '- Capital financé HT : ' + (installationPrice - initialPmtHT).toFixed(2) + ' €\n\n';
+      financialConditions += '\n';
     }
 
     if (hasPanels) {
@@ -553,17 +553,6 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                                 <span className="font-semibold text-green-800 print:text-xs">{(initialPayment / 1.20).toFixed(2)} €</span>
                               </div>
                             )}
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-700 font-bold print:text-xs">Capital financé HT</span>
-                              <span className="font-bold text-green-800 print:text-xs">
-                                {(() => {
-                                  const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
-                                    ? initialPayment
-                                    : initialPayment / 1.20;
-                                  return (installationPrice - initialPmtHT).toFixed(2);
-                                })()} €
-                              </span>
-                            </div>
                           </div>
                         </>
                       )}
