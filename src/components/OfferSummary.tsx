@@ -18,6 +18,8 @@ interface OfferSummaryProps {
     batteryDuration?: number;
   };
   power: number;
+  installationPrice: number;
+  initialPayment: number;
   clientType: 'particulier' | 'entreprise';
   displayMode: 'HT' | 'TTC';
   virtualBattery: boolean;
@@ -26,7 +28,7 @@ interface OfferSummaryProps {
   onBack: () => void;
 }
 
-const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, displayMode, virtualBattery, physicalBattery, batteryPower, onBack }) => {
+const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationPrice, initialPayment, clientType, displayMode, virtualBattery, physicalBattery, batteryPower, onBack }) => {
   const getSolvabilityColor = (solvability: string) => {
     switch (solvability) {
       case 'excellent': return 'text-green-600 bg-green-100 border-green-200';
@@ -84,6 +86,12 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
       : '';
 
     let financialConditions = 'CONDITIONS FINANCIÈRES\n';
+
+    if (initialPayment > 0 && hasPanels) {
+      financialConditions += '- Prix installation HT : ' + installationPrice.toLocaleString() + ' €\n' +
+        '- Versement initial TTC : ' + initialPayment.toLocaleString() + ' €\n' +
+        '- Capital financé HT : ' + (installationPrice - (initialPayment / 1.20)).toFixed(2) + ' €\n\n';
+    }
 
     if (hasPanels) {
       financialConditions += '- Durée panneaux : ' + offer.duration + ' ans\n' +
@@ -519,6 +527,26 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, clientType, d
                     </h3>
 
                     <div className="bg-green-50 p-4 rounded-lg print:p-2">
+                      {initialPayment > 0 && offer.monthlyPayment > 0 && (
+                        <>
+                          <div className="mb-3 pb-3 border-b-2 border-green-300">
+                            <div className="flex justify-between items-center mb-1 print:mb-1">
+                              <span className="text-gray-700 print:text-xs">Prix installation HT</span>
+                              <span className="font-semibold text-green-800 print:text-xs">{installationPrice.toLocaleString()} €</span>
+                            </div>
+                            <div className="flex justify-between items-center mb-1 print:mb-1">
+                              <span className="text-gray-700 print:text-xs">Versement initial TTC</span>
+                              <span className="font-semibold text-green-800 print:text-xs">{initialPayment.toLocaleString()} €</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-700 font-bold print:text-xs">Capital financé HT</span>
+                              <span className="font-bold text-green-800 print:text-xs">
+                                {(installationPrice - (initialPayment / 1.20)).toFixed(2)} €
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )}
                       {offer.monthlyPayment > 0 && (
                         <>
                           <div className="flex justify-between items-center mb-2 print:mb-1">

@@ -21,6 +21,7 @@ interface CalculationResult {
 const SalesCalculator: React.FC = () => {
   const [power, setPower] = useState<string>('');
   const [installationPrice, setInstallationPrice] = useState<string>('');
+  const [initialPayment, setInitialPayment] = useState<string>('');
   const [clientType, setClientType] = useState<'particulier' | 'entreprise'>('particulier');
   const [displayMode, setDisplayMode] = useState<'HT' | 'TTC'>('TTC');
   const [virtualBattery, setVirtualBattery] = useState<boolean>(false);
@@ -269,6 +270,11 @@ const SalesCalculator: React.FC = () => {
       }
     }
 
+    // Calcul du capital à financer avec versement initial
+    const initialPaymentValue = parseFloat(initialPayment) || 0;
+    const initialPaymentHT = initialPaymentValue > 0 ? initialPaymentValue / 1.20 : 0;
+    const capitalToFinance = hasPanels && initialPaymentHT > 0 ? priceValue - initialPaymentHT : priceValue;
+
     // Si on n'a que la batterie, on propose seulement 10 et 15 ans
     const durations = hasPanels ? [10, 15, 20, 25] : [10, 15];
     const calculatedResults: CalculationResult[] = durations.map(duration => {
@@ -279,7 +285,7 @@ const SalesCalculator: React.FC = () => {
       // Calcul panneaux si présents
       if (hasPanels) {
         const rate = getVariableRates(duration, powerValue);
-        monthlyPaymentHT = calculateMonthlyPayment(priceValue, rate, duration * 12);
+        monthlyPaymentHT = calculateMonthlyPayment(capitalToFinance, rate, duration * 12);
         monthlyPaymentTTC = monthlyPaymentHT * 1.20;
         residualValues = calculateResidualValues(priceValue, duration);
       }
@@ -344,6 +350,8 @@ const SalesCalculator: React.FC = () => {
       <OfferSummary
         offer={selectedOffer}
         power={parseFloat(power)}
+        installationPrice={parseFloat(installationPrice)}
+        initialPayment={parseFloat(initialPayment) || 0}
         clientType={clientType}
         displayMode={displayMode}
         virtualBattery={virtualBattery}
@@ -394,7 +402,7 @@ const SalesCalculator: React.FC = () => {
           {/* Contenu du formulaire */}
           <div className={`transition-all duration-300 ease-in-out ${isFormCollapsed ? 'max-h-0 opacity-0' : 'max-h-none opacity-100'}`}>
             <div className="px-8 pb-8">
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Puissance (kWc)
@@ -421,6 +429,20 @@ const SalesCalculator: React.FC = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Ex: 15000"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Versement initial TTC (€)
+                  </label>
+                  <input
+                    type="number"
+                    value={initialPayment}
+                    onChange={(e) => setInitialPayment(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Optionnel"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Optionnel - Réduit les mensualités</p>
                 </div>
 
                 <div>
@@ -488,9 +510,41 @@ const SalesCalculator: React.FC = () => {
 
               {/* Message pour puissance > 36 kWc */}
               {parseFloat(power) > 36 && (
-                <div className="mt-6 max-w-4xl mx-auto">
+                <div className="mt-6 max-w-6xl mx-auto">
                   <div className="p-4 bg-blue-100 border border-blue-400 text-blue-800 rounded-lg text-center">
                     <p className="font-medium">Le prix de l'installation sera validé par SunLib</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Affichage du capital financé si versement initial */}
+              {parseFloat(initialPayment) > 0 && parseFloat(installationPrice) > 0 && (
+                <div className="mt-6 max-w-6xl mx-auto">
+                  <div className="p-4 bg-green-100 border-2 border-green-400 rounded-lg">
+                    <h3 className="text-lg font-semibold text-green-800 mb-3 text-center">Calcul avec versement initial</h3>
+                    <div className="space-y-2 text-sm text-green-800">
+                      <div className="flex justify-between items-center">
+                        <span>Prix installation HT</span>
+                        <span className="font-semibold">{parseFloat(installationPrice).toLocaleString()} €</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Versement initial TTC</span>
+                        <span className="font-semibold">{parseFloat(initialPayment).toLocaleString()} €</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Versement initial HT (÷ 1.20)</span>
+                        <span className="font-semibold">{(parseFloat(initialPayment) / 1.20).toFixed(2)} €</span>
+                      </div>
+                      <div className="border-t-2 border-green-600 pt-2 mt-2 flex justify-between items-center">
+                        <span className="font-bold">Capital à financer</span>
+                        <span className="font-bold text-lg text-green-700">
+                          {(parseFloat(installationPrice) - (parseFloat(initialPayment) / 1.20)).toFixed(2)} €
+                        </span>
+                      </div>
+                      <p className="text-xs text-green-700 text-center mt-2 italic">
+                        Les mensualités seront calculées sur le capital financé
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
