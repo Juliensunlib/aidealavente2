@@ -88,9 +88,18 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
     let financialConditions = 'CONDITIONS FINANCIÈRES\n';
 
     if (initialPayment > 0 && hasPanels) {
+      const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
+        ? initialPayment
+        : initialPayment / 1.20;
+
       financialConditions += '- Prix installation HT : ' + installationPrice.toLocaleString() + ' €\n' +
-        '- Versement initial TTC : ' + initialPayment.toLocaleString() + ' €\n' +
-        '- Capital financé HT : ' + (installationPrice - (initialPayment / 1.20)).toFixed(2) + ' €\n\n';
+        '- Versement initial ' + displayMode + ' : ' + initialPayment.toLocaleString() + ' €\n';
+
+      if (clientType === 'particulier' && displayMode === 'TTC') {
+        financialConditions += '- Versement initial HT : ' + initialPmtHT.toFixed(2) + ' €\n';
+      }
+
+      financialConditions += '- Capital financé HT : ' + (installationPrice - initialPmtHT).toFixed(2) + ' €\n\n';
     }
 
     if (hasPanels) {
@@ -535,13 +544,24 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                               <span className="font-semibold text-green-800 print:text-xs">{installationPrice.toLocaleString()} €</span>
                             </div>
                             <div className="flex justify-between items-center mb-1 print:mb-1">
-                              <span className="text-gray-700 print:text-xs">Versement initial TTC</span>
+                              <span className="text-gray-700 print:text-xs">Versement initial {displayMode}</span>
                               <span className="font-semibold text-green-800 print:text-xs">{initialPayment.toLocaleString()} €</span>
                             </div>
+                            {clientType === 'particulier' && displayMode === 'TTC' && (
+                              <div className="flex justify-between items-center mb-1 print:mb-1">
+                                <span className="text-gray-700 text-xs print:text-xs">Versement initial HT (÷ 1.20)</span>
+                                <span className="font-semibold text-green-800 print:text-xs">{(initialPayment / 1.20).toFixed(2)} €</span>
+                              </div>
+                            )}
                             <div className="flex justify-between items-center">
                               <span className="text-gray-700 font-bold print:text-xs">Capital financé HT</span>
                               <span className="font-bold text-green-800 print:text-xs">
-                                {(installationPrice - (initialPayment / 1.20)).toFixed(2)} €
+                                {(() => {
+                                  const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
+                                    ? initialPayment
+                                    : initialPayment / 1.20;
+                                  return (installationPrice - initialPmtHT).toFixed(2);
+                                })()} €
                               </span>
                             </div>
                           </div>

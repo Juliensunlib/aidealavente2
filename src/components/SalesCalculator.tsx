@@ -272,7 +272,13 @@ const SalesCalculator: React.FC = () => {
 
     // Calcul du capital à financer avec versement initial
     const initialPaymentValue = parseFloat(initialPayment) || 0;
-    const initialPaymentHT = initialPaymentValue > 0 ? initialPaymentValue / 1.20 : 0;
+    // Si entreprise en HT : versement initial est déjà en HT
+    // Si particulier en TTC : versement initial est en TTC, on le convertit en HT
+    const initialPaymentHT = initialPaymentValue > 0
+      ? (clientType === 'entreprise' && displayMode === 'HT'
+          ? initialPaymentValue
+          : initialPaymentValue / 1.20)
+      : 0;
     const capitalToFinance = hasPanels && initialPaymentHT > 0 ? priceValue - initialPaymentHT : priceValue;
 
     // Si on n'a que la batterie, on propose seulement 10 et 15 ans
@@ -433,7 +439,7 @@ const SalesCalculator: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Versement initial TTC (€)
+                    Versement initial {displayMode} (€)
                   </label>
                   <input
                     type="number"
@@ -528,17 +534,26 @@ const SalesCalculator: React.FC = () => {
                         <span className="font-semibold">{parseFloat(installationPrice).toLocaleString()} €</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span>Versement initial TTC</span>
+                        <span>Versement initial {displayMode}</span>
                         <span className="font-semibold">{parseFloat(initialPayment).toLocaleString()} €</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span>Versement initial HT (÷ 1.20)</span>
-                        <span className="font-semibold">{(parseFloat(initialPayment) / 1.20).toFixed(2)} €</span>
-                      </div>
+                      {clientType === 'particulier' && displayMode === 'TTC' && (
+                        <div className="flex justify-between items-center">
+                          <span>Versement initial HT (÷ 1.20)</span>
+                          <span className="font-semibold">{(parseFloat(initialPayment) / 1.20).toFixed(2)} €</span>
+                        </div>
+                      )}
                       <div className="border-t-2 border-green-600 pt-2 mt-2 flex justify-between items-center">
-                        <span className="font-bold">Capital à financer</span>
+                        <span className="font-bold">Capital à financer HT</span>
                         <span className="font-bold text-lg text-green-700">
-                          {(parseFloat(installationPrice) - (parseFloat(initialPayment) / 1.20)).toFixed(2)} €
+                          {(() => {
+                            const initialPmt = parseFloat(initialPayment);
+                            const installPrice = parseFloat(installationPrice);
+                            const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
+                              ? initialPmt
+                              : initialPmt / 1.20;
+                            return (installPrice - initialPmtHT).toFixed(2);
+                          })()} €
                         </span>
                       </div>
                       <p className="text-xs text-green-700 text-center mt-2 italic">
