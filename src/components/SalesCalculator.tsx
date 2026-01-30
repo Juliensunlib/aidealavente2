@@ -224,6 +224,19 @@ const SalesCalculator: React.FC = () => {
     const batteryPriceValue = parseFloat(batteryPrice);
     const hasBattery = physicalBattery && !isNaN(batteryPowerValue) && !isNaN(batteryPriceValue);
 
+    // Validation du versement initial
+    const initialPaymentValue = parseFloat(initialPayment);
+    if (!isNaN(initialPaymentValue) && initialPaymentValue > 0) {
+      if (clientType === 'particulier' && initialPaymentValue < 500) {
+        setError('Le versement initial doit être d\'au moins 500€ TTC pour un particulier.');
+        return;
+      }
+      if (clientType === 'entreprise' && initialPaymentValue < 5000) {
+        setError('Le versement initial doit être d\'au moins 5000€ HT pour une entreprise.');
+        return;
+      }
+    }
+
     // Si batterie virtuelle est cochée, les panneaux sont obligatoires
     if (virtualBattery && !hasPanels) {
       setError('Veuillez renseigner les panneaux solaires (puissance et prix d\'installation).');
@@ -271,13 +284,13 @@ const SalesCalculator: React.FC = () => {
     }
 
     // Calcul du capital à financer avec versement initial
-    const initialPaymentValue = parseFloat(initialPayment) || 0;
+    const finalInitialPaymentValue = parseFloat(initialPayment) || 0;
     // Pour entreprise : versement initial est toujours en HT (pas de TVA à retirer)
     // Pour particulier : versement initial est toujours en TTC, on le convertit en HT
-    const initialPaymentHT = initialPaymentValue > 0
+    const initialPaymentHT = finalInitialPaymentValue > 0
       ? (clientType === 'entreprise'
-          ? initialPaymentValue
-          : initialPaymentValue / 1.20)
+          ? finalInitialPaymentValue
+          : finalInitialPaymentValue / 1.20)
       : 0;
     const capitalToFinance = hasPanels && initialPaymentHT > 0 ? priceValue - initialPaymentHT : priceValue;
 
@@ -445,10 +458,22 @@ const SalesCalculator: React.FC = () => {
                     type="number"
                     value={initialPayment}
                     onChange={(e) => setInitialPayment(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 transition-all ${
+                      parseFloat(initialPayment) > 0 &&
+                      ((clientType === 'particulier' && parseFloat(initialPayment) < 500) ||
+                       (clientType === 'entreprise' && parseFloat(initialPayment) < 5000))
+                        ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                        : 'border-gray-300 focus:ring-green-500 focus:border-transparent'
+                    }`}
                     placeholder="Optionnel"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 ${
+                    parseFloat(initialPayment) > 0 &&
+                    ((clientType === 'particulier' && parseFloat(initialPayment) < 500) ||
+                     (clientType === 'entreprise' && parseFloat(initialPayment) < 5000))
+                      ? 'text-red-600 font-semibold'
+                      : 'text-gray-500'
+                  }`}>
                     {clientType === 'particulier'
                       ? 'Minimum 500€ TTC - Réduit les mensualités'
                       : 'Minimum 5000€ HT - Réduit les mensualités'}
