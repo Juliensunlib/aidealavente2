@@ -421,6 +421,72 @@ const SalesCalculator: React.FC = () => {
           {/* Contenu du formulaire */}
           <div className={`transition-all duration-300 ease-in-out ${isFormCollapsed ? 'max-h-0 opacity-0' : 'max-h-none opacity-100'}`}>
             <div className="px-8 pb-8">
+              {/* Type de client et Affichage des prix */}
+              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type de client
+                  </label>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setClientType('particulier')}
+                      className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center ${
+                        clientType === 'particulier'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Particulier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClientType('entreprise')}
+                      className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center ${
+                        clientType === 'entreprise'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Building2 className="w-4 h-4 mr-2" />
+                      Entreprise
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Affichage des prix
+                  </label>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setDisplayMode('HT')}
+                      className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                        displayMode === 'HT'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      HT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDisplayMode('TTC')}
+                      className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                        displayMode === 'TTC'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      TTC
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Champs de saisie */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -478,68 +544,6 @@ const SalesCalculator: React.FC = () => {
                       ? 'Minimum 500€ TTC - Réduit les mensualités'
                       : 'Minimum 5000€ HT - Réduit les mensualités'}
                   </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type de client
-                  </label>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setClientType('particulier')}
-                      className={`flex-1 px-3 py-3 text-sm font-medium transition-colors flex items-center justify-center ${
-                        clientType === 'particulier'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Users className="w-4 h-4 mr-1" />
-                      Particulier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClientType('entreprise')}
-                      className={`flex-1 px-3 py-3 text-sm font-medium transition-colors flex items-center justify-center ${
-                        clientType === 'entreprise'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4 mr-1" />
-                      Entreprise
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Affichage des prix
-                  </label>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setDisplayMode('HT')}
-                      className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
-                        displayMode === 'HT'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      HT
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDisplayMode('TTC')}
-                      className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
-                        displayMode === 'TTC'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      TTC
-                    </button>
-                  </div>
                 </div>
               </div>
 
