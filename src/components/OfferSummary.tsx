@@ -88,18 +88,15 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
     let financialConditions = 'CONDITIONS FINANCIÈRES\n';
 
     if (initialPayment > 0 && hasPanels) {
-      const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
+      const initialPmtTTC = clientType === 'particulier'
         ? initialPayment
-        : initialPayment / 1.20;
+        : initialPayment * 1.20;
+      const initialPmtHT = clientType === 'particulier'
+        ? initialPayment / 1.20
+        : initialPayment;
 
-      financialConditions += '- Prix installation HT : ' + installationPrice.toLocaleString() + ' €\n' +
-        '- Versement initial ' + displayMode + ' : ' + initialPayment.toLocaleString() + ' €\n';
-
-      if (clientType === 'particulier' && displayMode === 'TTC') {
-        financialConditions += '- Versement initial HT : ' + initialPmtHT.toFixed(2) + ' €\n';
-      }
-
-      financialConditions += '\n';
+      financialConditions += '- Versement initial TTC : ' + initialPmtTTC.toFixed(2) + ' €\n' +
+        '- Versement initial HT : ' + initialPmtHT.toFixed(2) + ' €\n\n';
     }
 
     if (hasPanels) {
@@ -540,19 +537,23 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                         <>
                           <div className="mb-3 pb-3 border-b-2 border-green-300">
                             <div className="flex justify-between items-center mb-1 print:mb-1">
-                              <span className="text-gray-700 print:text-xs">Prix installation HT</span>
-                              <span className="font-semibold text-green-800 print:text-xs">{installationPrice.toLocaleString()} €</span>
+                              <span className="text-gray-700 print:text-xs">Versement initial TTC</span>
+                              <span className="font-semibold text-green-800 print:text-xs">
+                                {clientType === 'particulier'
+                                  ? initialPayment.toLocaleString()
+                                  : (initialPayment * 1.20).toFixed(2)
+                                } €
+                              </span>
                             </div>
                             <div className="flex justify-between items-center mb-1 print:mb-1">
-                              <span className="text-gray-700 print:text-xs">Versement initial {displayMode}</span>
-                              <span className="font-semibold text-green-800 print:text-xs">{initialPayment.toLocaleString()} €</span>
+                              <span className="text-gray-700 print:text-xs">Versement initial HT</span>
+                              <span className="font-semibold text-green-800 print:text-xs">
+                                {clientType === 'particulier'
+                                  ? (initialPayment / 1.20).toFixed(2)
+                                  : initialPayment.toLocaleString()
+                                } €
+                              </span>
                             </div>
-                            {clientType === 'particulier' && displayMode === 'TTC' && (
-                              <div className="flex justify-between items-center mb-1 print:mb-1">
-                                <span className="text-gray-700 text-xs print:text-xs">Versement initial HT (÷ 1.20)</span>
-                                <span className="font-semibold text-green-800 print:text-xs">{(initialPayment / 1.20).toFixed(2)} €</span>
-                              </div>
-                            )}
                           </div>
                         </>
                       )}
