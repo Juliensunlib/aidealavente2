@@ -272,10 +272,10 @@ const SalesCalculator: React.FC = () => {
 
     // Calcul du capital à financer avec versement initial
     const initialPaymentValue = parseFloat(initialPayment) || 0;
-    // Si entreprise en HT : versement initial est déjà en HT
-    // Si particulier en TTC : versement initial est en TTC, on le convertit en HT
+    // Pour entreprise : versement initial est toujours en HT (pas de TVA à retirer)
+    // Pour particulier : versement initial est toujours en TTC, on le convertit en HT
     const initialPaymentHT = initialPaymentValue > 0
-      ? (clientType === 'entreprise' && displayMode === 'HT'
+      ? (clientType === 'entreprise'
           ? initialPaymentValue
           : initialPaymentValue / 1.20)
       : 0;
@@ -437,9 +437,9 @@ const SalesCalculator: React.FC = () => {
                   />
                 </div>
 
-                <div className="hidden">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Versement initial {displayMode} (€)
+                    Versement initial {clientType === 'particulier' ? 'TTC' : 'HT'} (€)
                   </label>
                   <input
                     type="number"
@@ -448,7 +448,11 @@ const SalesCalculator: React.FC = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Optionnel"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Optionnel - Réduit les mensualités</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {clientType === 'particulier'
+                      ? 'Minimum 500€ TTC - Réduit les mensualités'
+                      : 'Minimum 5000€ HT - Réduit les mensualités'}
+                  </p>
                 </div>
 
                 <div>
@@ -534,10 +538,10 @@ const SalesCalculator: React.FC = () => {
                         <span className="font-semibold">{parseFloat(installationPrice).toLocaleString()} €</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span>Versement initial {displayMode}</span>
+                        <span>Versement initial {clientType === 'particulier' ? 'TTC' : 'HT'}</span>
                         <span className="font-semibold">{parseFloat(initialPayment).toLocaleString()} €</span>
                       </div>
-                      {clientType === 'particulier' && displayMode === 'TTC' && (
+                      {clientType === 'particulier' && (
                         <div className="flex justify-between items-center">
                           <span>Versement initial HT (÷ 1.20)</span>
                           <span className="font-semibold">{(parseFloat(initialPayment) / 1.20).toFixed(2)} €</span>
@@ -549,7 +553,7 @@ const SalesCalculator: React.FC = () => {
                           {(() => {
                             const initialPmt = parseFloat(initialPayment);
                             const installPrice = parseFloat(installationPrice);
-                            const initialPmtHT = clientType === 'entreprise' && displayMode === 'HT'
+                            const initialPmtHT = clientType === 'entreprise'
                               ? initialPmt
                               : initialPmt / 1.20;
                             return (installPrice - initialPmtHT).toFixed(2);
