@@ -316,9 +316,11 @@ const SalesCalculator: React.FC = () => {
 
       // Calcul batterie physique si présente
       if (hasBattery) {
-        batteryMonthlyPaymentHT = calculateBatteryMonthlyPayment(batteryPriceValue, batteryDuration);
+        // Pour la batterie seule, on utilise la durée de la boucle (10 ou 15 ans)
+        const effectiveBatteryDuration = hasPanels ? batteryDuration : (duration as 10 | 15);
+        batteryMonthlyPaymentHT = calculateBatteryMonthlyPayment(batteryPriceValue, effectiveBatteryDuration);
         batteryMonthlyPaymentTTC = batteryMonthlyPaymentHT * 1.20;
-        batteryResiduals = calculateBatteryResidualValues(batteryPriceValue, batteryDuration);
+        batteryResiduals = calculateBatteryResidualValues(batteryPriceValue, effectiveBatteryDuration);
       }
 
       const totalMonthlyPaymentHT = monthlyPaymentHT + batteryMonthlyPaymentHT;
@@ -331,6 +333,8 @@ const SalesCalculator: React.FC = () => {
       if (hasPanels && hasBattery && batteryResiduals.length > 0) {
         totalResiduals = calculateTotalResidualValues(residualValues, batteryResiduals);
       }
+
+      const effectiveBatteryDuration = hasBattery ? (hasPanels ? batteryDuration : (duration as 10 | 15)) : undefined;
 
       return {
         duration,
@@ -345,7 +349,7 @@ const SalesCalculator: React.FC = () => {
         residualValues: hasPanels ? residualValues : [],
         batteryResidualValues: hasBattery ? batteryResiduals : undefined,
         totalResidualValues: (hasPanels && hasBattery) ? totalResiduals : undefined,
-        batteryDuration: hasBattery ? batteryDuration : undefined
+        batteryDuration: effectiveBatteryDuration
       };
     });
 
