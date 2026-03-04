@@ -106,13 +106,13 @@ const SalesCalculator: React.FC = () => {
     return 'difficult';
   };
 
-  const calculateResidualValues = (initialPrice: number, duration: number) => {
+  const calculateResidualValues = (initialPrice: number, duration: number, capitalFinanced: number) => {
     const percentages = residualPercentages[duration as keyof typeof residualPercentages];
     const startYear = clientType === 'entreprise' ? 5 : 2;
     const skipYears = clientType === 'entreprise' ? 3 : 0;
 
-    // Pour les particuliers, calculer les valeurs résiduelles sur le prix TTC
-    const basePrice = clientType === 'particulier' ? initialPrice * 1.20 : initialPrice;
+    // Pour les particuliers, calculer les valeurs résiduelles sur le capital financé TTC
+    const basePrice = clientType === 'particulier' ? capitalFinanced * 1.20 : capitalFinanced;
 
     return percentages
       .slice(skipYears)
@@ -122,12 +122,12 @@ const SalesCalculator: React.FC = () => {
         let valueTTC: number;
 
         if (clientType === 'particulier') {
-          // Pour les particuliers: appliquer le pourcentage sur le prix TTC
+          // Pour les particuliers: appliquer le pourcentage sur le capital financé TTC
           valueTTC = Math.round((basePrice * percentage / 100) * 100) / 100;
           valueHT = Math.round((valueTTC / 1.20) * 100) / 100;
         } else {
-          // Pour les entreprises: appliquer le pourcentage sur le prix HT
-          valueHT = Math.round((initialPrice * percentage / 100) * 100) / 100;
+          // Pour les entreprises: appliquer le pourcentage sur le capital financé HT
+          valueHT = Math.round((capitalFinanced * percentage / 100) * 100) / 100;
           valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
         }
 
@@ -155,13 +155,13 @@ const SalesCalculator: React.FC = () => {
     return Math.round(payment * 100) / 100;
   };
 
-  const calculateBatteryResidualValues = (batteryPriceValue: number, batteryDurationValue: number) => {
+  const calculateBatteryResidualValues = (batteryPriceValue: number, batteryDurationValue: number, capitalFinanced: number) => {
     const percentages = batteryResidualPercentages[batteryDurationValue as keyof typeof batteryResidualPercentages];
     const startYear = clientType === 'entreprise' ? 5 : 2;
     const skipYears = clientType === 'entreprise' ? 3 : 0;
 
-    // Pour les particuliers, calculer les valeurs résiduelles sur le prix TTC
-    const basePrice = clientType === 'particulier' ? batteryPriceValue * 1.20 : batteryPriceValue;
+    // Pour les particuliers, calculer les valeurs résiduelles sur le capital financé TTC
+    const basePrice = clientType === 'particulier' ? capitalFinanced * 1.20 : capitalFinanced;
 
     return percentages
       .slice(skipYears)
@@ -171,12 +171,12 @@ const SalesCalculator: React.FC = () => {
         let valueTTC: number;
 
         if (clientType === 'particulier') {
-          // Pour les particuliers: appliquer le pourcentage sur le prix TTC
+          // Pour les particuliers: appliquer le pourcentage sur le capital financé TTC
           valueTTC = Math.round((basePrice * percentage / 100) * 100) / 100;
           valueHT = Math.round((valueTTC / 1.20) * 100) / 100;
         } else {
-          // Pour les entreprises: appliquer le pourcentage sur le prix HT
-          valueHT = Math.round((batteryPriceValue * percentage / 100) * 100) / 100;
+          // Pour les entreprises: appliquer le pourcentage sur le capital financé HT
+          valueHT = Math.round((capitalFinanced * percentage / 100) * 100) / 100;
           valueTTC = Math.round((valueHT * 1.20) * 100) / 100;
         }
 
@@ -293,6 +293,7 @@ const SalesCalculator: React.FC = () => {
           : finalInitialPaymentValue / 1.20)
       : 0;
     const capitalToFinance = hasPanels && initialPaymentHT > 0 ? priceValue - initialPaymentHT : priceValue;
+    const batteryCapitalToFinance = hasBattery ? batteryPriceValue : 0;
 
     // Si on n'a que la batterie, on propose seulement 10 et 15 ans
     const durations = hasPanels ? [10, 15, 20, 25] : [10, 15];
@@ -306,7 +307,7 @@ const SalesCalculator: React.FC = () => {
         const rate = getVariableRates(duration, powerValue);
         monthlyPaymentHT = calculateMonthlyPayment(capitalToFinance, rate, duration * 12);
         monthlyPaymentTTC = monthlyPaymentHT * 1.20;
-        residualValues = calculateResidualValues(priceValue, duration);
+        residualValues = calculateResidualValues(priceValue, duration, capitalToFinance);
       }
 
       let batteryMonthlyPaymentHT = 0;
@@ -320,7 +321,7 @@ const SalesCalculator: React.FC = () => {
         const effectiveBatteryDuration = hasPanels ? batteryDuration : (duration as 10 | 15);
         batteryMonthlyPaymentHT = calculateBatteryMonthlyPayment(batteryPriceValue, effectiveBatteryDuration);
         batteryMonthlyPaymentTTC = batteryMonthlyPaymentHT * 1.20;
-        batteryResiduals = calculateBatteryResidualValues(batteryPriceValue, effectiveBatteryDuration);
+        batteryResiduals = calculateBatteryResidualValues(batteryPriceValue, effectiveBatteryDuration, batteryCapitalToFinance);
       }
 
       const totalMonthlyPaymentHT = monthlyPaymentHT + batteryMonthlyPaymentHT;
