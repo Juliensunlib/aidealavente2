@@ -46,7 +46,7 @@ const SalesCalculator: React.FC = () => {
     42090, 42780, 43470, 44160, 44850, 45540, 46230, 46920, 47610, 48300, 48990, 49680
   ];
 
-  // Pourcentages pour les valeurs résiduelles
+  // Pourcentages pour les frais de sortie anticipée
   const residualPercentages = {
     25: [106.0, 105.0, 104.0, 103.0, 102.0, 101.0, 99.0, 96.0, 95.0, 94.0, 93.0, 92.0, 91.0, 90.0, 87.0, 80.0, 71.0, 64.0, 55.0, 46.0, 36.0, 24.0, 12.8],
     20: [106.0, 105.0, 104.0, 103.0, 102.0, 100.0, 96.0, 93.0, 90.0, 86.0, 80.0, 75.0, 66.0, 59.0, 47.4, 37.8, 24.0, 12.9],
@@ -54,7 +54,7 @@ const SalesCalculator: React.FC = () => {
     10: [94.0, 91.0, 87.0, 81.0, 71.0, 60.0, 42.0, 15.5]
   };
 
-  // Pourcentages pour les valeurs résiduelles de la batterie
+  // Pourcentages pour les frais de sortie anticipée de la batterie
   const batteryResidualPercentages = {
     15: [94.5, 93.1, 91.3, 89.1, 86.3, 82.8, 78.4, 72.8, 65.8, 57.1, 46.0, 32.2, 14.8],
     10: [94.0, 91.2, 87.2, 81.4, 64.7, 60.4, 42.2, 15.8]
@@ -111,7 +111,7 @@ const SalesCalculator: React.FC = () => {
     const startYear = clientType === 'entreprise' ? 5 : 2;
     const skipYears = clientType === 'entreprise' ? 3 : 0;
 
-    // Pour les particuliers, calculer les valeurs résiduelles sur le capital financé TTC
+    // Pour les particuliers, calculer les frais de sortie anticipée sur le capital financé TTC
     const basePrice = clientType === 'particulier' ? capitalFinanced * 1.20 : capitalFinanced;
 
     return percentages
@@ -160,7 +160,7 @@ const SalesCalculator: React.FC = () => {
     const startYear = clientType === 'entreprise' ? 5 : 2;
     const skipYears = clientType === 'entreprise' ? 3 : 0;
 
-    // Pour les particuliers, calculer les valeurs résiduelles sur le capital financé TTC
+    // Pour les particuliers, calculer les frais de sortie anticipée sur le capital financé TTC
     const basePrice = clientType === 'particulier' ? capitalFinanced * 1.20 : capitalFinanced;
 
     return percentages
@@ -330,7 +330,7 @@ const SalesCalculator: React.FC = () => {
       const minRevenue = calculateMinRevenue(totalMonthlyPaymentTTC, hasBattery);
       const solvability = getSolvability(totalMonthlyPaymentTTC);
 
-      // Calcul valeurs résiduelles totales
+      // Calcul frais de sortie anticipée totaux
       if (hasPanels && hasBattery && batteryResiduals.length > 0) {
         totalResiduals = calculateTotalResidualValues(residualValues, batteryResiduals);
       }
@@ -801,7 +801,7 @@ const SalesCalculator: React.FC = () => {
                           className="w-full bg-green-100 text-green-700 py-2 px-4 rounded-lg hover:bg-green-200 transition-colors flex items-center justify-center"
                         >
                           <TrendingUp className="w-4 h-4 mr-2" />
-                          Voir valeurs résiduelles
+                          Voir frais de sortie anticipée
                         </button>
 
                         <button
@@ -819,7 +819,7 @@ const SalesCalculator: React.FC = () => {
                         {hasPanels && hasBattery && result.totalResidualValues ? (
                           <div className="space-y-4">
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles ({clientType === 'particulier' ? 'TTC' : 'HT'})
+                              Frais de sortie anticipée ({clientType === 'particulier' ? 'TTC' : 'HT'})
                             </h5>
 
                             <div className="grid md:grid-cols-3 gap-3 text-xs">
@@ -872,7 +872,7 @@ const SalesCalculator: React.FC = () => {
                         ) : hasBattery && result.batteryResidualValues ? (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles Batterie ({clientType === 'particulier' ? 'TTC' : 'HT'})
+                              Frais de sortie anticipée Batterie ({clientType === 'particulier' ? 'TTC' : 'HT'})
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.batteryResidualValues.map((residual) => {
@@ -889,7 +889,7 @@ const SalesCalculator: React.FC = () => {
                         ) : (
                           <>
                             <h5 className="font-semibold text-green-800 mb-3 text-center">
-                              Valeurs résiduelles Panneaux ({clientType === 'particulier' ? 'TTC' : 'HT'})
+                              Frais de sortie anticipée Panneaux ({clientType === 'particulier' ? 'TTC' : 'HT'})
                             </h5>
                             <div className="max-h-48 overflow-y-auto space-y-2">
                               {result.residualValues.map((residual) => {
@@ -913,7 +913,7 @@ const SalesCalculator: React.FC = () => {
 
             {selectedDuration && (
               <div className="text-center text-sm text-gray-600 bg-green-50 p-4 rounded-lg">
-                <p>💡 Cliquez sur "Voir valeurs résiduelles" d'une autre durée pour comparer</p>
+                <p>💡 Cliquez sur "Voir frais de sortie anticipée" d'une autre durée pour comparer</p>
               </div>
             )}
           </div>

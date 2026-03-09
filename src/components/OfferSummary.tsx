@@ -663,18 +663,18 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                   </div>
                 </div>
 
-                {/* Valeurs résiduelles compactes */}
+                {/* Frais de sortie anticipée compactes */}
                 <div className="mt-6 bg-gray-50 p-4 rounded-lg print-residual-section">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3 text-center flex items-center justify-center print-residual-title">
                     <TrendingUp className="w-4 h-4 mr-2 print:w-3 print:h-3" />
-                    Valeurs résiduelles ({clientType === 'particulier' ? 'TTC' : 'HT'})
+                    Frais de sortie anticipée ({clientType === 'particulier' ? 'TTC' : 'HT'})
                   </h3>
 
                   {offer.monthlyPayment > 0 && offer.batteryMonthlyPayment && offer.batteryResidualValues && offer.totalResidualValues ? (
                     <div className="space-y-4">
                       {/* Tableau Panneaux */}
                       <div>
-                        <h4 className="text-sm font-semibold text-blue-700 mb-2 text-center">Valeurs résiduelles Panneaux</h4>
+                        <h4 className="text-sm font-semibold text-blue-700 mb-2 text-center">Frais de sortie anticipée Panneaux</h4>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs">
                             <thead>
@@ -704,7 +704,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
 
                       {/* Tableau Batterie */}
                       <div>
-                        <h4 className="text-sm font-semibold text-orange-700 mb-2 text-center">Valeurs résiduelles Batterie</h4>
+                        <h4 className="text-sm font-semibold text-orange-700 mb-2 text-center">Frais de sortie anticipée Batterie</h4>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs">
                             <thead>
@@ -734,7 +734,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
 
                       {/* Tableau TOTAL */}
                       <div>
-                        <h4 className="text-sm font-bold text-green-800 mb-2 text-center">Valeurs résiduelles TOTALES</h4>
+                        <h4 className="text-sm font-bold text-green-800 mb-2 text-center">Frais de sortie anticipée TOTAUX</h4>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs border-2 border-green-600">
                             <thead>
