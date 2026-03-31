@@ -6,10 +6,22 @@ interface CalculationResult {
   duration: number;
   monthlyPayment: number;
   monthlyPaymentTTC: number;
+  monthlyPaymentYear1?: number;
+  monthlyPaymentYear1TTC?: number;
+  monthlyPaymentYear2?: number;
+  monthlyPaymentYear2TTC?: number;
+  monthlyPaymentYear3Plus?: number;
+  monthlyPaymentYear3PlusTTC?: number;
   batteryMonthlyPayment?: number;
   batteryMonthlyPaymentTTC?: number;
   totalMonthlyPayment?: number;
   totalMonthlyPaymentTTC?: number;
+  totalMonthlyPaymentYear1?: number;
+  totalMonthlyPaymentYear1TTC?: number;
+  totalMonthlyPaymentYear2?: number;
+  totalMonthlyPaymentYear2TTC?: number;
+  totalMonthlyPaymentYear3Plus?: number;
+  totalMonthlyPaymentYear3PlusTTC?: number;
   minRevenue: number;
   solvability: 'excellent' | 'good' | 'acceptable' | 'difficult';
   residualValues: { year: number; value: number; valueTTC: number }[];
@@ -303,11 +315,27 @@ const SalesCalculator: React.FC = () => {
       let residualValues: { year: number; value: number; valueTTC: number }[] = [];
 
       // Calcul panneaux si présents
+      let monthlyPaymentYear1HT = 0;
+      let monthlyPaymentYear1TTC = 0;
+      let monthlyPaymentYear2HT = 0;
+      let monthlyPaymentYear2TTC = 0;
+      let monthlyPaymentYear3PlusHT = 0;
+      let monthlyPaymentYear3PlusTTC = 0;
+
       if (hasPanels) {
         const rate = getVariableRates(duration, powerValue);
         monthlyPaymentHT = calculateMonthlyPayment(capitalToFinance, rate, duration * 12);
         monthlyPaymentTTC = monthlyPaymentHT * 1.20;
         residualValues = calculateResidualValues(priceValue, duration, capitalToFinance);
+
+        if (duration === 25) {
+          monthlyPaymentYear1HT = monthlyPaymentHT * 0.70;
+          monthlyPaymentYear1TTC = monthlyPaymentYear1HT * 1.20;
+          monthlyPaymentYear2HT = monthlyPaymentHT * 0.95;
+          monthlyPaymentYear2TTC = monthlyPaymentYear2HT * 1.20;
+          monthlyPaymentYear3PlusHT = monthlyPaymentHT * 1.045;
+          monthlyPaymentYear3PlusTTC = monthlyPaymentYear3PlusHT * 1.20;
+        }
       }
 
       let batteryMonthlyPaymentHT = 0;
@@ -327,6 +355,22 @@ const SalesCalculator: React.FC = () => {
       const totalMonthlyPaymentHT = monthlyPaymentHT + batteryMonthlyPaymentHT;
       const totalMonthlyPaymentTTC = monthlyPaymentTTC + batteryMonthlyPaymentTTC;
 
+      let totalMonthlyPaymentYear1HT = 0;
+      let totalMonthlyPaymentYear1TTC = 0;
+      let totalMonthlyPaymentYear2HT = 0;
+      let totalMonthlyPaymentYear2TTC = 0;
+      let totalMonthlyPaymentYear3PlusHT = 0;
+      let totalMonthlyPaymentYear3PlusTTC = 0;
+
+      if (duration === 25 && hasPanels) {
+        totalMonthlyPaymentYear1HT = monthlyPaymentYear1HT + batteryMonthlyPaymentHT;
+        totalMonthlyPaymentYear1TTC = monthlyPaymentYear1TTC + batteryMonthlyPaymentTTC;
+        totalMonthlyPaymentYear2HT = monthlyPaymentYear2HT + batteryMonthlyPaymentHT;
+        totalMonthlyPaymentYear2TTC = monthlyPaymentYear2TTC + batteryMonthlyPaymentTTC;
+        totalMonthlyPaymentYear3PlusHT = monthlyPaymentYear3PlusHT + batteryMonthlyPaymentHT;
+        totalMonthlyPaymentYear3PlusTTC = monthlyPaymentYear3PlusTTC + batteryMonthlyPaymentTTC;
+      }
+
       const minRevenue = calculateMinRevenue(totalMonthlyPaymentTTC, hasBattery);
       const solvability = getSolvability(totalMonthlyPaymentTTC);
 
@@ -341,10 +385,22 @@ const SalesCalculator: React.FC = () => {
         duration,
         monthlyPayment: monthlyPaymentHT,
         monthlyPaymentTTC,
+        monthlyPaymentYear1: duration === 25 ? monthlyPaymentYear1HT : undefined,
+        monthlyPaymentYear1TTC: duration === 25 ? monthlyPaymentYear1TTC : undefined,
+        monthlyPaymentYear2: duration === 25 ? monthlyPaymentYear2HT : undefined,
+        monthlyPaymentYear2TTC: duration === 25 ? monthlyPaymentYear2TTC : undefined,
+        monthlyPaymentYear3Plus: duration === 25 ? monthlyPaymentYear3PlusHT : undefined,
+        monthlyPaymentYear3PlusTTC: duration === 25 ? monthlyPaymentYear3PlusTTC : undefined,
         batteryMonthlyPayment: hasBattery ? batteryMonthlyPaymentHT : undefined,
         batteryMonthlyPaymentTTC: hasBattery ? batteryMonthlyPaymentTTC : undefined,
         totalMonthlyPayment: (hasPanels && hasBattery) || (!hasPanels && hasBattery) ? totalMonthlyPaymentHT : undefined,
         totalMonthlyPaymentTTC: (hasPanels && hasBattery) || (!hasPanels && hasBattery) ? totalMonthlyPaymentTTC : undefined,
+        totalMonthlyPaymentYear1: (duration === 25 && hasPanels) ? totalMonthlyPaymentYear1HT : undefined,
+        totalMonthlyPaymentYear1TTC: (duration === 25 && hasPanels) ? totalMonthlyPaymentYear1TTC : undefined,
+        totalMonthlyPaymentYear2: (duration === 25 && hasPanels) ? totalMonthlyPaymentYear2HT : undefined,
+        totalMonthlyPaymentYear2TTC: (duration === 25 && hasPanels) ? totalMonthlyPaymentYear2TTC : undefined,
+        totalMonthlyPaymentYear3Plus: (duration === 25 && hasPanels) ? totalMonthlyPaymentYear3PlusHT : undefined,
+        totalMonthlyPaymentYear3PlusTTC: (duration === 25 && hasPanels) ? totalMonthlyPaymentYear3PlusTTC : undefined,
         minRevenue,
         solvability,
         residualValues: hasPanels ? residualValues : [],
@@ -743,7 +799,39 @@ const SalesCalculator: React.FC = () => {
                         </h4>
 
                         <div className="mb-4">
-                          {hasPanels && hasBattery ? (
+                          {result.duration === 25 && hasPanels ? (
+                            <>
+                              <div className="space-y-2 text-sm">
+                                <div className="bg-blue-50 p-2 rounded">
+                                  <p className="font-semibold text-blue-800">Année 1 :</p>
+                                  <p className="text-2xl font-bold text-blue-600">
+                                    {hasBattery
+                                      ? (displayMode === 'HT' ? result.totalMonthlyPaymentYear1 : result.totalMonthlyPaymentYear1TTC)?.toFixed(2)
+                                      : (displayMode === 'HT' ? result.monthlyPaymentYear1 : result.monthlyPaymentYear1TTC)?.toFixed(2)
+                                    } € {displayMode}
+                                  </p>
+                                </div>
+                                <div className="bg-yellow-50 p-2 rounded">
+                                  <p className="font-semibold text-yellow-800">Année 2 :</p>
+                                  <p className="text-2xl font-bold text-yellow-600">
+                                    {hasBattery
+                                      ? (displayMode === 'HT' ? result.totalMonthlyPaymentYear2 : result.totalMonthlyPaymentYear2TTC)?.toFixed(2)
+                                      : (displayMode === 'HT' ? result.monthlyPaymentYear2 : result.monthlyPaymentYear2TTC)?.toFixed(2)
+                                    } € {displayMode}
+                                  </p>
+                                </div>
+                                <div className="bg-green-50 p-2 rounded">
+                                  <p className="font-semibold text-green-800">Années 3-25 :</p>
+                                  <p className="text-2xl font-bold text-green-600">
+                                    {hasBattery
+                                      ? (displayMode === 'HT' ? result.totalMonthlyPaymentYear3Plus : result.totalMonthlyPaymentYear3PlusTTC)?.toFixed(2)
+                                      : (displayMode === 'HT' ? result.monthlyPaymentYear3Plus : result.monthlyPaymentYear3PlusTTC)?.toFixed(2)
+                                    } € {displayMode}
+                                  </p>
+                                </div>
+                              </div>
+                            </>
+                          ) : hasPanels && hasBattery ? (
                             <>
                               <div className="text-sm text-gray-600 mb-2">
                                 <p>Panneaux : {(displayMode === 'HT' ? result.monthlyPayment : result.monthlyPaymentTTC).toFixed(2)} €</p>
