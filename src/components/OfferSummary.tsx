@@ -6,22 +6,10 @@ interface OfferSummaryProps {
     duration: number;
     monthlyPayment: number;
     monthlyPaymentTTC: number;
-    monthlyPaymentYear1?: number;
-    monthlyPaymentYear1TTC?: number;
-    monthlyPaymentYear2?: number;
-    monthlyPaymentYear2TTC?: number;
-    monthlyPaymentYear3Plus?: number;
-    monthlyPaymentYear3PlusTTC?: number;
     batteryMonthlyPayment?: number;
     batteryMonthlyPaymentTTC?: number;
     totalMonthlyPayment?: number;
     totalMonthlyPaymentTTC?: number;
-    totalMonthlyPaymentYear1?: number;
-    totalMonthlyPaymentYear1TTC?: number;
-    totalMonthlyPaymentYear2?: number;
-    totalMonthlyPaymentYear2TTC?: number;
-    totalMonthlyPaymentYear3Plus?: number;
-    totalMonthlyPaymentYear3PlusTTC?: number;
     minRevenue: number;
     solvability: 'excellent' | 'good' | 'acceptable' | 'difficult';
     residualValues: { year: number; value: number; valueTTC: number }[];
@@ -112,14 +100,8 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
     }
 
     if (hasPanels) {
-      financialConditions += '- Durée panneaux : ' + offer.duration + ' ans\n';
-      if (offer.duration === 25 && offer.monthlyPaymentYear1) {
-        financialConditions += '- Mensualité Panneaux Année 1 ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPaymentYear1 : offer.monthlyPaymentYear1TTC!).toFixed(2) + ' €\n';
-        financialConditions += '- Mensualité Panneaux Année 2 ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPaymentYear2 : offer.monthlyPaymentYear2TTC!).toFixed(2) + ' €\n';
-        financialConditions += '- Mensualité Panneaux Années 3-25 ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPaymentYear3Plus : offer.monthlyPaymentYear3PlusTTC!).toFixed(2) + ' €\n';
-      } else {
-        financialConditions += '- Mensualité Panneaux ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2) + ' €\n';
-      }
+      financialConditions += '- Durée panneaux : ' + offer.duration + ' ans\n' +
+        '- Mensualité Panneaux ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2) + ' €\n';
     }
 
     if (hasBattery && offer.batteryMonthlyPayment) {
@@ -128,13 +110,7 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
     }
 
     if (hasPanels && hasBattery) {
-      if (offer.duration === 25 && offer.totalMonthlyPaymentYear1) {
-        financialConditions += '- TOTAL Mensualité Année 1 ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.totalMonthlyPaymentYear1 : offer.totalMonthlyPaymentYear1TTC!).toFixed(2) + ' €\n';
-        financialConditions += '- TOTAL Mensualité Année 2 ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.totalMonthlyPaymentYear2 : offer.totalMonthlyPaymentYear2TTC!).toFixed(2) + ' €\n';
-        financialConditions += '- TOTAL Mensualité Années 3-25 ' + displayMode + ' : ' + (displayMode === 'HT' ? offer.totalMonthlyPaymentYear3Plus : offer.totalMonthlyPaymentYear3PlusTTC!).toFixed(2) + ' €\n';
-      } else {
-        financialConditions += '- TOTAL Mensualité ' + displayMode + ' : ' + displayPrice!.toFixed(2) + ' €\n';
-      }
+      financialConditions += '- TOTAL Mensualité ' + displayMode + ' : ' + displayPrice!.toFixed(2) + ' €\n';
     }
 
     financialConditions += '- ' + (clientType === 'entreprise'
@@ -587,35 +563,12 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
                             <span className="text-gray-700 print:text-xs">Durée panneaux</span>
                             <span className="font-semibold text-green-800 print:text-xs">{offer.duration} ans</span>
                           </div>
-                          {offer.duration === 25 && offer.monthlyPaymentYear1 ? (
-                            <div className="mb-3 pb-2 border-b border-green-300">
-                              <div className="flex justify-between items-center mb-1 print:mb-1">
-                                <span className="text-gray-700 print:text-xs font-semibold">Année 1</span>
-                                <span className="font-semibold text-blue-700 print:text-xs">
-                                  {(displayMode === 'HT' ? offer.monthlyPaymentYear1 : offer.monthlyPaymentYear1TTC!).toFixed(2)} € {displayMode}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mb-1 print:mb-1">
-                                <span className="text-gray-700 print:text-xs font-semibold">Année 2</span>
-                                <span className="font-semibold text-yellow-700 print:text-xs">
-                                  {(displayMode === 'HT' ? offer.monthlyPaymentYear2 : offer.monthlyPaymentYear2TTC!).toFixed(2)} € {displayMode}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mb-1 print:mb-1">
-                                <span className="text-gray-700 print:text-xs font-semibold">Années 3-25</span>
-                                <span className="font-semibold text-green-700 print:text-xs">
-                                  {(displayMode === 'HT' ? offer.monthlyPaymentYear3Plus : offer.monthlyPaymentYear3PlusTTC!).toFixed(2)} € {displayMode}
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex justify-between items-center mb-2 print:mb-1">
-                              <span className="text-gray-700 print:text-xs">Mensualité Panneaux {displayMode}</span>
-                              <span className="font-semibold text-green-800 print:text-xs">
-                                {(displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2)} €
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex justify-between items-center mb-2 print:mb-1">
+                            <span className="text-gray-700 print:text-xs">Mensualité Panneaux {displayMode}</span>
+                            <span className="font-semibold text-green-800 print:text-xs">
+                              {(displayMode === 'HT' ? offer.monthlyPayment : offer.monthlyPaymentTTC).toFixed(2)} €
+                            </span>
+                          </div>
                         </>
                       )}
 
@@ -636,36 +589,12 @@ const OfferSummary: React.FC<OfferSummaryProps> = ({ offer, power, installationP
 
                       {offer.monthlyPayment > 0 && offer.batteryMonthlyPayment && (
                         <div className="border-t-2 border-green-600 pt-2 mb-2">
-                          {offer.duration === 25 && offer.totalMonthlyPaymentYear1 ? (
-                            <div className="space-y-1">
-                              <p className="text-gray-700 font-bold print:text-xs mb-2">TOTAL Mensualité {displayMode}</p>
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-700 print:text-xs">Année 1</span>
-                                <span className="font-bold text-blue-800 print:text-xs">
-                                  {(displayMode === 'HT' ? offer.totalMonthlyPaymentYear1 : offer.totalMonthlyPaymentYear1TTC!).toFixed(2)} €
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-700 print:text-xs">Année 2</span>
-                                <span className="font-bold text-yellow-800 print:text-xs">
-                                  {(displayMode === 'HT' ? offer.totalMonthlyPaymentYear2 : offer.totalMonthlyPaymentYear2TTC!).toFixed(2)} €
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-700 print:text-xs">Années 3-25</span>
-                                <span className="font-bold text-green-800 text-lg print:text-xs">
-                                  {(displayMode === 'HT' ? offer.totalMonthlyPaymentYear3Plus : offer.totalMonthlyPaymentYear3PlusTTC!).toFixed(2)} €
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-700 font-bold print:text-xs">TOTAL Mensualité {displayMode}</span>
-                              <span className="font-bold text-green-800 text-lg print:text-xs">
-                                {(displayMode === 'HT' ? offer.totalMonthlyPayment! : offer.totalMonthlyPaymentTTC!).toFixed(2)} €
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700 font-bold print:text-xs">TOTAL Mensualité {displayMode}</span>
+                            <span className="font-bold text-green-800 text-lg print:text-xs">
+                              {(displayMode === 'HT' ? offer.totalMonthlyPayment! : offer.totalMonthlyPaymentTTC!).toFixed(2)} €
+                            </span>
+                          </div>
                         </div>
                       )}
 
